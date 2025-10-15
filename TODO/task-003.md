@@ -1,40 +1,29 @@
 
+create a catalog of stacks implementations & per language coding standards to choose from 
 
-next goal write out each Agent in detail
+also needs to work with a project level stack definition and coding standards for languages used.
+https://github.com/buildermethods/agent-os
 
-## /jpspec.research
-	- Agent: Researcher - goes out and does research on an idea
+refer to the languages in .languages folder (if there is a match)
 
-	- Agent: Business Validator - realistic validation based on certain criteria
+# Languages:  
+    - Go - backend, API & CLI, K8s Operators, etc
+    - Typescript - front end (react) and backend bun + typescript
+    - Python - backend + Data / ML Pipelines
+    - Swift / React Native / Kotlin - Mobile
 
-## /jpspec.specify 
-	- Agent: PM planner - creates PRDs  (manages /speckit.tasks) 
+Stacks are chosen in /jpspec.plan by combination of
+- agent project architect
+- agent platform engineer
 
-## /jpspec.plan
-	- Agent: project architect (designs all like Gregor Hohpe) (builds out /speckit.constitution)
-
-	- Agent: platform engineer (including infra & backend) (builds out /speckit.constitution)
-
-## /jpspec.implement 
-	- Agent: frontend engineer - react or mobile
-
-	- Agent: frontend code reviewer - (expert reviews of react or mobile)
-
-	- Agent: backend engineer - cli, api, middleware - go, typescript, python
-
-	- Agent: backend code reviewer - go, typescript, python
-
-	- Agent: AI ML Eng - for all aspects of MLOps and AI engineering
-
-## /jpspec.validate
-	- Agent: Q/A tester - quality guardian - API + contract testing (can also use tools for SRE / debugging like Brendan Gregg)
-
-	- Agent: Cyber - secure by design and security tooling  
-	
-	- Agent: Tech Writer - for blogs / documents and well formatted - (formats suit audience)
-
-    - Agent: Release Mgr - validates & merges code, and for promotion (gets Human Approval)
-
-## /jpspec.operate
-
-    - Agent: SRE - expert in CICD (GitHub Actions) and SRE work (kubernetes), and DevSecOps & Observability
+# Stacks:
+    - Full Stack React
+    - React Frontend - Go Backend
+    - Mobile Frontend - Go Backend
+    - React Frontend - Python Backend
+    - Mobile Frontend - Python Backend
+    - Data / ML Pipeline - Python
+    - VS Code extension - typescript full stack
+    - Chrome plugin - typescript full stack
+    - Tray App (Windows) - 
+    - Tray App (Mac) - 
