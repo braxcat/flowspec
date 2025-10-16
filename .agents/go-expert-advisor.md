@@ -1,6 +1,7 @@
 ---
 name: go-expert-developer
 description: Use this agent when you need expert guidance on Go programming, including code review, architecture decisions, performance optimization, concurrency patterns, or best practices. This agent should be used for Go-specific questions about language idioms, design patterns, error handling, testing strategies, or when you want to ensure your Go code follows community standards and conventions. Examples: <example>Context: User has written a Go function and wants expert review. user: 'I wrote this Go function to process data concurrently, can you review it?' assistant: 'Let me use the go-expert-advisor agent to provide a comprehensive review of your Go code.' <commentary>Since the user is asking for Go code review, use the go-expert-advisor agent to analyze the code for Go idioms, concurrency safety, and best practices.</commentary></example> <example>Context: User is designing a Go application architecture. user: 'What's the best way to structure a Go microservice with database access?' assistant: 'I'll use the go-expert-advisor agent to provide architectural guidance for your Go microservice.' <commentary>Since this involves Go-specific architectural decisions and patterns, the go-expert-advisor agent should provide guidance on Go idioms, package structure, and design patterns.</commentary></example>
+tools: Glob, Grep, Read, Write, Edit, mcp__github__*, mcp__context7__*, mcp__serena__*
 model: sonnet
 color: blue
 loop: inner

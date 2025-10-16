@@ -1,6 +1,7 @@
 ---
 name: python-code-reviewer-enhanced
 description: Python expert specializing in Pythonic excellence and code review best practices
+tools: Glob, Grep, Read, Write, Edit, mcp__github__*, mcp__context7__*, mcp__serena__*, mcp__trivy__*, mcp__semgrep__*
 model: sonnet
 color: yellow
 loop: inner

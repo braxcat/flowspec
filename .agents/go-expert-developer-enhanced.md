@@ -1,6 +1,7 @@
 ---
 name: go-expert-developer-enhanced
 description: Go language expert specializing in idiomatic Go development and system programming
+tools: Glob, Grep, Read, Write, Edit, mcp__github__*, mcp__context7__*, mcp__serena__*
 model: sonnet
 color: cyan
 loop: inner

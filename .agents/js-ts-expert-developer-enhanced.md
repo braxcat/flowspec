@@ -1,6 +1,7 @@
 ---
 name: js-ts-expert-developer-enhanced
 description: JavaScript/TypeScript expert specializing in modern full-stack development and best practices
+tools: Glob, Grep, Read, Write, Edit, mcp__github__*, mcp__context7__*, mcp__serena__*, mcp__figma__*, mcp__shadcn-ui__*, mcp__playwright-test__*
 model: sonnet
 color: purple
 loop: inner

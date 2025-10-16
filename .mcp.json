@@ -1,0 +1,69 @@
+{
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {},
+      "description": "GitHub API: repos, issues, PRs, code search, workflows"
+    },
+    "serena": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/oraios/serena", "serena-mcp-server", "--project", "${PROJECT_ROOT}"],
+      "env": {},
+      "description": "LSP-grade code understanding & safe semantic edits"
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"],
+      "env": {
+        "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}"
+      },
+      "description": "Up-to-date, version-specific library documentation"
+    },
+    "playwright-test": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp"],
+      "env": {},
+      "description": "Browser automation for testing and E2E workflows"
+    },
+    "trivy": {
+      "command": "npx",
+      "args": ["-y", "@aquasecurity/trivy-mcp"],
+      "env": {},
+      "description": "Container/IaC security scans and SBOM generation"
+    },
+    "semgrep": {
+      "command": "npx",
+      "args": ["-y", "@returntocorp/semgrep-mcp"],
+      "env": {},
+      "description": "SAST code scanning for security vulnerabilities"
+    },
+    "figma": {
+      "command": "npx",
+      "args": ["-y", "figma-developer-mcp"],
+      "env": {
+        "FIGMA_API_KEY": "${FIGMA_API_KEY}"
+      },
+      "description": "Figma API integration for design files and components"
+    },
+    "shadcn-ui": {
+      "command": "npx",
+      "args": ["-y", "@heilgar/shadcn-ui-mcp-server"],
+      "env": {},
+      "description": "shadcn/ui component library access and installation"
+    }
+  },
+  "_notes": {
+    "environment_variables": [
+      "CONTEXT7_API_KEY: Required for Context7 MCP server",
+      "FIGMA_API_KEY: Required for Figma MCP server",
+      "PROJECT_ROOT: Automatically set to current working directory for Serena"
+    ],
+    "missing_mcps": [
+      "DAST (Dynamic Application Security Testing): No specific MCP server found - consider using OWASP ZAP directly",
+      "Binary Signing: No specific MCP server found - use cosign/sigstore CLI tools directly",
+      "IAST (Interactive Application Security Testing): No specific MCP server found"
+    ],
+    "installation": "MCP servers are installed automatically on first use via npx/uvx. Ensure Node.js and Python (uv) are installed."
+  }
+}

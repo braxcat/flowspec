@@ -1,12 +1,5 @@
 
 # GOAL:
 
-use /jpspec:research agent and evaluate 
-what improvements can happen from learning from this 
-https://martinfowler.com/articles/exploring-gen-ai/sdd-3-tools.html
-write out suggestions
-
-into task-08-suggestions.md 
-
-
+please validate which agents are used in the tasks and which ones are not.  please move all the agents that are not connected to .agents-bench
 

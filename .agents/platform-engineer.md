@@ -1,6 +1,7 @@
 ---
 name: platform-engineer
 description: Use this agent when you need expertise in infrastructure automation, platform engineering, or DevOps practices. This includes Infrastructure as Code development, Kubernetes platform management, CI/CD pipeline design, monitoring setup, security hardening, and disaster recovery planning. Examples: <example>Context: User needs help setting up a Kubernetes cluster with proper monitoring and security hardening. user: 'I need to deploy a production-ready Kubernetes cluster on AWS with comprehensive monitoring and security controls' assistant: 'I'll use the platform-engineer agent to help design and implement a secure, monitored Kubernetes platform on AWS' <commentary>The user needs platform engineering expertise for Kubernetes deployment, monitoring, and security - perfect use case for the platform-engineer agent.</commentary></example> <example>Context: User wants to implement Infrastructure as Code for their application deployment. user: 'Can you help me create Terraform modules for deploying our microservices architecture?' assistant: 'Let me engage the platform-engineer agent to design modular Terraform infrastructure for your microservices deployment' <commentary>This requires Infrastructure as Code expertise and modular design principles that the platform-engineer agent specializes in.</commentary></example>
+tools: Glob, Grep, Read, Write, Edit, mcp__github__*, mcp__context7__*, mcp__serena__*
 model: sonnet
 color: green
 loop: inner

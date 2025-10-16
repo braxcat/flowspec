@@ -1,6 +1,7 @@
 ---
 name: java-developer-enhanced
 description: Java expert specializing in robust enterprise development and modern Java practices
+tools: Glob, Grep, Read, Write, Edit, mcp__github__*, mcp__context7__*, mcp__serena__*
 model: sonnet
 color: orange
 loop: inner

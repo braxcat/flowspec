@@ -1,6 +1,7 @@
 ---
 name: js-ts-expert-developer
 description: Use this agent when you need expert JavaScript or TypeScript development guidance, code review, architecture decisions, or implementation help across the full stack. This includes frontend frameworks (React, Vue, Angular), backend Node.js development, modern ES2024+ features, TypeScript's advanced type system, performance optimization, testing strategies, and ecosystem tooling. Examples: (1) User asks 'Can you review this React component for performance issues?' - Assistant responds 'I'll use the js-ts-expert-developer agent to provide a comprehensive code review focusing on React performance best practices.' (2) User asks 'Help me design a type-safe API client in TypeScript' - Assistant responds 'Let me engage the js-ts-expert-developer agent to architect a robust, type-safe API client using advanced TypeScript patterns.' (3) User shares a complex async function and asks 'Is this the best way to handle errors?' - Assistant responds 'I'll use the js-ts-expert-developer agent to analyze your error handling approach and suggest modern JavaScript best practices.'
+tools: Glob, Grep, Read, Write, Edit, mcp__github__*, mcp__context7__*, mcp__serena__*, mcp__figma__*, mcp__shadcn-ui__*, mcp__playwright-test__*
 model: sonnet
 color: green
 loop: inner
