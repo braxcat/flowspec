@@ -1,0 +1,60 @@
+name: Backlog Flush
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  flush-backlog:
+    runs-on: ubuntu-latest
+    # Only run if commit message contains flush-backlog keyword (case-insensitive)
+    if: contains(github.event.head_commit.message, 'flush-backlog') || contains(github.event.head_commit.message, 'Flush Backlog') || contains(github.event.head_commit.message, 'FLUSH-BACKLOG')
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install backlog.md CLI
+        run: npm install -g backlog.md
+
+      - name: Verify backlog CLI installation
+        run: backlog --version
+
+      - name: Run flush-backlog script
+        id: flush
+        run: |
+          chmod +x scripts/bash/flush-backlog.sh
+          TRIGGER_SOURCE="automated (commit ${{ github.sha }})" \
+            ./scripts/bash/flush-backlog.sh --auto-commit || exit_code=$?
+
+          # Handle exit codes:
+          # 0 = success (tasks archived)
+          # 2 = no tasks to archive (still success for workflow)
+          # 1, 3 = actual errors
+          if [ "${exit_code:-0}" -eq 2 ]; then
+            echo "No Done tasks to archive"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          elif [ "${exit_code:-0}" -ne 0 ]; then
+            exit $exit_code
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Push changes
+        if: steps.flush.outputs.has_changes == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git push origin main
