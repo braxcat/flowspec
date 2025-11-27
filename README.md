@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="./media/logo_small.webp"/>
+    <img src="./images/jp-spec-kit.jpeg"/>
     <h1>JP Spec Kit</h1>
     <h3><em>Spec-Driven Development meets AI-Powered Task Management</em></h3>
 </div>
