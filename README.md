@@ -32,11 +32,12 @@ Requirements → Spec → Plan → Tasks → Backlog.md
 ```
 
 ## Quick Start
+(assuuming you have uv and pnpm installed)
 
 ### 1. Install
 
 ```bash
-uv tool install specify-cli --from git+https://github.com/jpoley/jp-spec-kit.git
+uv tool install specify-cli --from git+https://github.com/jpoley/jp-spec-kit.git && pnpm i -g backlog.md
 ```
 
 ### 2. Initialize a Project
