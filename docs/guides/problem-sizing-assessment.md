@@ -407,7 +407,7 @@ Assessment:
 - Technical: A (Standard CRUD)
 - Business Impact: B (User experience)
 
-Score: 14/32 (Medium)
+Score: 15/32 (Medium)
 Recommendation: Spec-Light Mode
 
 Approach:
@@ -436,7 +436,7 @@ Assessment:
 - Technical: D (New architecture, multiple POCs)
 - Business Impact: D (Foundational capability, revenue-critical)
 
-Score: 30/32 (Complex)
+Score: 31/32 (Complex)
 Recommendation: Full SDD Workflow
 
 Approach:
