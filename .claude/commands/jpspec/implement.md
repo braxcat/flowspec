@@ -233,9 +233,11 @@ Before coding, you MUST:
 
 During implementation:
 - **Check ACs as you complete them**: `backlog task edit <task-id> --check-ac 1`
+- **Check multiple ACs**: `backlog task edit <task-id> --check-ac 1 --check-ac 2`
 
 After implementation:
-- **Add implementation notes**: `backlog task edit <task-id> --notes $'Implemented X with Y pattern'`
+- **Add implementation notes**: `backlog task edit <task-id> --notes $'Implemented X with Y pattern\n\nKey changes:\n- File A modified\n- File B created'`
+- **Verify all ACs checked**: `backlog task <task-id> --plain` (all should show `[x]`)
 
 Implementation Requirements:
 
