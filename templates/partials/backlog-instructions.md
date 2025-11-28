@@ -113,7 +113,7 @@ backlog task create "Epic: User Signup" \
 - SRE Agent: Create subtasks for each operational area if beneficial
 - Other agents: Optional, only if breaking down complex work provides value
 
-**Naming Convention**: `jpspec-{command}-{feature}-{yyyymmdd}-{descriptor}`
+**Naming Convention**: `jpspec-{command}-{feature-slug}-{yyyymmdd}-{descriptor}`
 
 Example: `jpspec-specify-auth-20251128-epic-signup`
 

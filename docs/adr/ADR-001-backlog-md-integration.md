@@ -135,7 +135,7 @@ All jpspec-managed tasks follow this lifecycle:
 
 | From | To | Trigger | Required Actions |
 |------|-----|---------|------------------|
-| To Do | In Progress | Command entry hook | `--status "In Progress" --assignee @agent` |
+| To Do | In Progress | Command entry hook | `--status "In Progress" --assign-to @agent` |
 | In Progress | Blocked | Dependency/issue | `--status Blocked --append-notes "Blocker: ..."` |
 | Blocked | In Progress | Issue resolved | `--status "In Progress" --append-notes "Resolved: ..."` |
 | In Progress | Done | All ACs met + notes added | `--check-ac <all> --notes "<summary>" --status Done` |
@@ -147,10 +147,10 @@ Commands with sequential phases (research, validate) update assignee during tran
 ```bash
 # Example: research command (researcher → business validator)
 # Phase 1 start
-backlog task edit <id> -s "In Progress" -a @researcher
+backlog task edit <id> -s "In Progress" --assign-to @researcher
 
 # Phase 1 → Phase 2 transition
-backlog task edit <id> --check-ac 1 -a @business-validator
+backlog task edit <id> --check-ac 1 --assign-to @business-validator
 
 # Phase 2 complete
 backlog task edit <id> --check-ac 2 --notes "<summary>" -s Done
@@ -180,7 +180,7 @@ backlog task edit <id> --check-ac 2 --notes "<summary>" -s Done
 **Template Contents**:
 - Task lifecycle overview
 - Common CLI commands for task management
-- AC management (check/uncheck/remove)
+- AC management (check/uncheck)
 - Implementation notes guidelines
 - Definition of Done checklist
 
@@ -197,7 +197,7 @@ backlog task edit <id> --check-ac 2 --notes "<summary>" -s Done
 All jpspec-created tasks follow this format:
 
 ```
-jpspec-{command}-{feature-slug}-{yyyymmdd}
+jpspec-{command}-{feature-slug}-{yyyymmdd}-{descriptor}
 ```
 
 ### Format Breakdown
@@ -206,9 +206,11 @@ jpspec-{command}-{feature-slug}-{yyyymmdd}
 - **Command**: One of: `specify`, `plan`, `research`, `implement`, `validate`, `operate`
 - **Feature Slug**: Kebab-case feature identifier (e.g., `user-authentication`, `api-redesign`)
 - **Timestamp**: Date in `yyyymmdd` format for uniqueness and ordering
+- **Descriptor**: (Optional for main tasks, required for subtasks) Additional context
 
 ### Examples
 
+**Main Tasks**:
 ```
 jpspec-specify-user-auth-20251128
 jpspec-implement-graphql-resolver-20251128
@@ -216,10 +218,7 @@ jpspec-validate-payment-flow-20251128
 jpspec-operate-k8s-deployment-20251129
 ```
 
-### Subtask Naming
-
-Subtasks created by agents append a descriptor:
-
+**Subtasks** (with descriptor):
 ```
 jpspec-specify-user-auth-20251128-epic-signup
 jpspec-implement-api-redesign-20251128-backend
@@ -252,7 +251,7 @@ Before launching agents, activate the task in backlog.md:
 backlog task <TASK_ID> --plain
 
 # Activate task
-backlog task edit <TASK_ID> -s "In Progress" -a @<agent-name>
+backlog task edit <TASK_ID> -s "In Progress" --assign-to @<agent-name>
 
 # Add implementation plan
 backlog task edit <TASK_ID> --plan "1. [Phase 1]\n2. [Phase 2]\n3. [Phase 3]"
@@ -332,9 +331,11 @@ Key capabilities:
 
 **Entry Hook**:
 ```bash
-backlog task edit <id> -s "In Progress" -a @pm-planner
+backlog task edit <id> -s "In Progress" --assign-to @pm-planner
 backlog task edit <id> --plan "1. Problem analysis\n2. DVF+V validation\n3. PRD creation\n4. Task breakdown"
 ```
+
+**Note**: DVF+V stands for Desirability, Viability, Feasibility + Viability—the four critical risks framework from SVPG.
 
 **Agent Instrumentation**: Full injection (enables subtask creation from section 6)
 
@@ -355,7 +356,7 @@ backlog task edit <id> --check-ac 1 --check-ac 2 --notes "PRD created: X epics, 
 
 **Entry Hook**:
 ```bash
-backlog task edit <id> -s "In Progress" -a @architect,@platform-engineer
+backlog task edit <id> -s "In Progress" --assign-to @architect,@platform-engineer
 backlog task edit <id> --plan "1. Parallel architecture + platform planning\n2. Consolidate\n3. Build constitution"
 ```
 
@@ -373,7 +374,7 @@ backlog task edit <id> --notes "Architecture: ADR-X, Y. Platform: CI/CD design, 
 
 **Entry Hook**:
 ```bash
-backlog task edit <id> -s "In Progress" -a @researcher
+backlog task edit <id> -s "In Progress" --assign-to @researcher
 backlog task edit <id> --plan "1. Market & technical research\n2. Business validation\n3. Go/No-Go decision"
 ```
 
@@ -382,7 +383,7 @@ backlog task edit <id> --plan "1. Market & technical research\n2. Business valid
 **Phase Transition**:
 ```bash
 # After research phase
-backlog task edit <id> --check-ac 1 -a @business-validator --append-notes "Research: TAM $X, SAM $Y"
+backlog task edit <id> --check-ac 1 --assign-to @business-validator --append-notes "Research: TAM $X, SAM $Y"
 ```
 
 **Exit Hook**:
@@ -396,7 +397,7 @@ backlog task edit <id> --check-ac 2 --notes "Validation: GO with Z% confidence" 
 
 **Entry Hook**:
 ```bash
-backlog task edit <id> -s "In Progress" -a @frontend,@backend
+backlog task edit <id> -s "In Progress" --assign-to @frontend,@backend
 backlog task edit <id> --plan "1. Parallel implementation\n2. Code review\n3. Address feedback"
 ```
 
@@ -425,7 +426,7 @@ backlog task edit <id> --notes "Feature implemented: [summary]" -s Done
 
 **Entry Hook**:
 ```bash
-backlog task edit <id> -s "In Progress" -a @qa,@security
+backlog task edit <id> -s "In Progress" --assign-to @qa,@security
 backlog task edit <id> --plan "1. QA + Security\n2. Documentation\n3. Release readiness\n4. Human approval"
 ```
 
@@ -434,10 +435,10 @@ backlog task edit <id> --plan "1. QA + Security\n2. Documentation\n3. Release re
 **Phase Transitions**:
 ```bash
 # Phase 1 → 2
-backlog task edit <id> --check-ac 1 --check-ac 2 -a @tech-writer
+backlog task edit <id> --check-ac 1 --check-ac 2 --assign-to @tech-writer
 
 # Phase 2 → 3
-backlog task edit <id> --check-ac 3 -a @release-manager
+backlog task edit <id> --check-ac 3 --assign-to @release-manager
 
 # Phase 3 complete (WAIT FOR HUMAN APPROVAL)
 backlog task edit <id> --check-ac 4 --append-notes "Pre-release validation complete. Awaiting approval."
@@ -457,7 +458,7 @@ backlog task edit <id> -s Done
 
 **Entry Hook**:
 ```bash
-backlog task edit <id> -s "In Progress" -a @sre-agent
+backlog task edit <id> -s "In Progress" --assign-to @sre-agent
 backlog task edit <id> --plan "1. SLOs\n2. CI/CD\n3. K8s\n4. DevSecOps\n5. Observability\n6. Incidents\n7. IaC\n8. Perf\n9. DR"
 ```
 
@@ -492,7 +493,7 @@ def test_specify_entry_hook():
     result = subprocess.run([
         "backlog", "task", "edit", task_id,
         "-s", "In Progress",
-        "-a", "@pm-planner"
+        "--assign-to", "@pm-planner"
     ], capture_output=True)
 
     assert result.returncode == 0
@@ -513,7 +514,7 @@ def test_research_phase_transition():
     result = subprocess.run([
         "backlog", "task", "edit", task_id,
         "--check-ac", "1",
-        "-a", "@business-validator"
+        "--assign-to", "@business-validator"
     ], capture_output=True)
 
     assert result.returncode == 0
@@ -684,10 +685,10 @@ def test_validate_human_approval_required():
 
 ```bash
 # Single agent
-backlog task edit <id> -s "In Progress" -a @agent-name
+backlog task edit <id> -s "In Progress" --assign-to @agent-name
 
 # Multiple agents (parallel)
-backlog task edit <id> -s "In Progress" -a @agent1,@agent2
+backlog task edit <id> -s "In Progress" --assign-to @agent1,@agent2
 
 # With implementation plan
 backlog task edit <id> --plan "1. Phase 1\n2. Phase 2\n3. Phase 3"
@@ -704,7 +705,7 @@ backlog task edit <id> --check-ac 1 --check-ac 2 --check-ac 3  # Multiple ACs
 backlog task edit <id> --append-notes "Completed X, starting Y"
 
 # Change assignee (phase transitions)
-backlog task edit <id> -a @next-agent
+backlog task edit <id> --assign-to @next-agent
 ```
 
 ### Task Completion (Exit Hooks)
@@ -772,7 +773,7 @@ Use the Task tool to launch a general-purpose agent:
 Activate the task before launching agent:
 
 ```bash
-backlog task edit <TASK_ID> -s "In Progress" -a @pm-planner
+backlog task edit <TASK_ID> -s "In Progress" --assign-to @pm-planner
 backlog task edit <TASK_ID> --plan "1. Problem analysis\n2. PRD creation\n3. Task breakdown"
 ```
 
