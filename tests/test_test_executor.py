@@ -3,16 +3,11 @@ Tests for test_executor module.
 """
 
 import subprocess
-from pathlib import Path
-from unittest.mock import Mock, patch, mock_open
-
-import pytest
+from unittest.mock import Mock, patch
 
 from specify_cli.test_executor import (
     ACMapper,
     LintExecutor,
-    LintResult,
-    TestExecutionReport,
     TestExecutor,
     TestFrameworkDetector,
     TestOutputParser,
@@ -48,6 +43,11 @@ class TestTestFrameworkDetector:
         """Test go test detection with go.mod file."""
         (tmp_path / "go.mod").touch()
         assert TestFrameworkDetector.detect(tmp_path) == "go_test"
+
+    def test_detect_cargo_test_with_cargo_toml(self, tmp_path):
+        """Test cargo test detection with Cargo.toml file."""
+        (tmp_path / "Cargo.toml").touch()
+        assert TestFrameworkDetector.detect(tmp_path) == "cargo_test"
 
     def test_detect_from_package_json_vitest(self, tmp_path):
         """Test vitest detection from package.json devDependencies."""
@@ -312,6 +312,52 @@ class TestACMapper:
             "User can login"
         )
         assert confidence < 0.2
+
+    def test_map_tests_to_acs_empty_tests(self):
+        """Test mapping with empty test list."""
+        test_results = []
+        acceptance_criteria = [
+            (1, "User can login", False),
+        ]
+        mappings = ACMapper.map_tests_to_acs(test_results, acceptance_criteria)
+        assert len(mappings) == 0
+
+    def test_map_tests_to_acs_empty_acs(self):
+        """Test mapping with empty AC list."""
+        test_results = [
+            TestResult(name="test_user_can_login", status="passed"),
+        ]
+        acceptance_criteria = []
+        mappings = ACMapper.map_tests_to_acs(test_results, acceptance_criteria)
+        assert len(mappings) == 0
+
+    def test_extract_words_with_special_chars(self):
+        """Test word extraction with special characters."""
+        words = ACMapper._extract_words("test_user's_login-flow")
+        assert "user" in words
+        assert "login" in words
+        assert "flow" in words
+
+    def test_extract_words_empty_string(self):
+        """Test word extraction from empty string."""
+        words = ACMapper._extract_words("")
+        assert len(words) == 0
+
+    def test_sequence_match_bonus_no_sequence(self):
+        """Test sequence bonus with no matches."""
+        bonus = ACMapper._sequence_match_bonus(["foo", "bar"], ["baz", "qux"])
+        assert bonus == 0.0
+
+    def test_sequence_match_bonus_full_sequence(self):
+        """Test sequence bonus with full sequence match."""
+        bonus = ACMapper._sequence_match_bonus(["user", "can", "login"], ["user", "can", "login"])
+        assert bonus == 3 * ACMapper.SEQUENCE_BONUS_MULTIPLIER
+
+    def test_sequence_match_bonus_partial_sequence(self):
+        """Test sequence bonus with partial sequence match."""
+        bonus = ACMapper._sequence_match_bonus(["user", "login"], ["user", "can", "login"])
+        # Should match "user" then "login" (2 in sequence)
+        assert bonus == 2 * ACMapper.SEQUENCE_BONUS_MULTIPLIER
 
 
 class TestLintExecutor:

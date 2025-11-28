@@ -129,6 +129,8 @@ class TestFrameworkDetector:
             content = pyproject_path.read_text()
             return "[tool.pytest" in content or "pytest" in content.lower()
         except Exception:
+            # Safe to ignore: if pyproject.toml is missing or malformed,
+            # pytest is not configured and we return False
             return False
 
     @staticmethod
@@ -154,6 +156,8 @@ class TestFrameworkDetector:
                 return "jest"
 
         except Exception:
+            # Safe to ignore: if package.json is missing or malformed,
+            # we cannot detect framework and will return None
             pass
 
         return None
@@ -369,7 +373,7 @@ class TestExecutor:
             failed=stats["failed"],
             skipped=stats["skipped"],
             results=test_results,
-            success=(stats["failed"] == 0 and stats["total"] > 0),
+            success=(stats["failed"] == 0 and stats["passed"] > 0),
         )
 
         return report
@@ -393,6 +397,7 @@ class TestExecutor:
             "vitest": TestOutputParser.parse_vitest,
             "jest": TestOutputParser.parse_jest,
             "go_test": TestOutputParser.parse_go_test,
+            "cargo_test": TestOutputParser.parse_go_test,  # Cargo uses similar format
         }
 
         parser = parser_map.get(self.framework)
@@ -404,6 +409,10 @@ class TestExecutor:
 
 class ACMapper:
     """Maps test results to acceptance criteria."""
+
+    # Matching configuration constants
+    MIN_CONFIDENCE_THRESHOLD = 0.3
+    SEQUENCE_BONUS_MULTIPLIER = 0.1
 
     @staticmethod
     def map_tests_to_acs(
@@ -434,7 +443,7 @@ class ACMapper:
                     best_match = test
 
             # Only create mapping if confidence is above threshold
-            if best_match and best_confidence > 0.3:
+            if best_match and best_confidence > ACMapper.MIN_CONFIDENCE_THRESHOLD:
                 mappings.append(ACMapping(
                     ac_index=ac_index,
                     ac_text=ac_text,
@@ -450,10 +459,17 @@ class ACMapper:
         """
         Calculate matching confidence between test name and AC text.
 
-        Uses fuzzy string matching with the following rules:
-        - Extract words from test name (strip test_, Test, etc.)
-        - Extract words from AC text
-        - Calculate word overlap and position similarity
+        Uses fuzzy string matching algorithm with the following steps:
+        1. Extract words from test name (strip test_, Test, etc.)
+        2. Extract words from AC text
+        3. Calculate word overlap ratio (common words / AC words)
+        4. Add sequence bonus for consecutive word matches
+        5. Return combined score capped at 1.0
+
+        Algorithm:
+        - overlap_ratio = len(common_words) / len(ac_words)
+        - sequence_bonus = max_consecutive_matches * SEQUENCE_BONUS_MULTIPLIER
+        - confidence = min(overlap_ratio + sequence_bonus, 1.0)
 
         Returns:
             Confidence score from 0.0 to 1.0
@@ -470,8 +486,8 @@ class ACMapper:
         if not common_words:
             return 0.0
 
-        # Base confidence on word overlap ratio
-        overlap_ratio = len(common_words) / max(len(test_words), len(ac_words))
+        # Base confidence on word overlap ratio (using AC words as denominator)
+        overlap_ratio = len(common_words) / len(ac_words)
 
         # Bonus for sequential matches
         sequence_bonus = ACMapper._sequence_match_bonus(test_words, ac_words)
@@ -507,13 +523,14 @@ class ACMapper:
         for word in words1:
             if word in words2[i:]:
                 current_sequence += 1
-                i = words2.index(word, i) + 1
+                # Fix index bug: search in remaining slice and adjust offset
+                i = words2[i:].index(word) + i + 1
             else:
                 max_sequence = max(max_sequence, current_sequence)
                 current_sequence = 0
 
         max_sequence = max(max_sequence, current_sequence)
-        return max_sequence * 0.1  # 10% bonus per sequential match
+        return max_sequence * ACMapper.SEQUENCE_BONUS_MULTIPLIER
 
 
 class LintExecutor:
@@ -540,6 +557,8 @@ class LintExecutor:
                         return "typescript"
                     return "javascript"
             except Exception:
+                # Safe to ignore: if package.json is malformed,
+                # default to javascript as a reasonable fallback
                 return "javascript"
         if (project_path / "go.mod").exists():
             return "go"
