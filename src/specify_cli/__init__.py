@@ -189,7 +189,9 @@ EXTENSION_REPO_DEFAULT_VERSION = "latest"
 SOURCE_REPO_MARKER = ".jp-spec-kit-source"
 
 # Path to compatibility matrix YAML
-COMPATIBILITY_MATRIX_PATH = Path(__file__).parent.parent.parent / ".spec-kit-compatibility.yml"
+COMPATIBILITY_MATRIX_PATH = (
+    Path(__file__).parent.parent.parent / ".spec-kit-compatibility.yml"
+)
 
 
 def load_compatibility_matrix() -> dict:
@@ -200,7 +202,7 @@ def load_compatibility_matrix() -> dict:
     """
     try:
         if COMPATIBILITY_MATRIX_PATH.exists():
-            with open(COMPATIBILITY_MATRIX_PATH, 'r') as f:
+            with open(COMPATIBILITY_MATRIX_PATH, "r") as f:
                 return yaml.safe_load(f) or {}
     except Exception:
         pass
@@ -227,16 +229,13 @@ def check_backlog_installed_version() -> Optional[str]:
     """
     try:
         result = subprocess.run(
-            ["backlog", "--version"],
-            capture_output=True,
-            text=True,
-            check=False
+            ["backlog", "--version"], capture_output=True, text=True, check=False
         )
         if result.returncode == 0:
             # backlog --version outputs just the version number, e.g. "1.21.0"
             output = result.stdout.strip()
             # Validate it looks like a version (digits and dots)
-            if output and all(c.isdigit() or c == '.' for c in output):
+            if output and all(c.isdigit() or c == "." for c in output):
                 return output
     except FileNotFoundError:
         pass
@@ -268,9 +267,10 @@ def compare_semver(version1: str, version2: str) -> int:
          0 if version1 == version2
          1 if version1 > version2
     """
+
     def parse_version(v: str) -> Tuple[int, int, int]:
         """Parse version string into tuple of ints."""
-        parts = v.lstrip('v').split('.')
+        parts = v.lstrip("v").split(".")
         major = int(parts[0]) if len(parts) > 0 else 0
         minor = int(parts[1]) if len(parts) > 1 else 0
         patch = int(parts[2]) if len(parts) > 2 else 0
@@ -490,6 +490,157 @@ def select_with_arrows(
         raise typer.Exit(1)
 
     return selected_key
+
+
+def parse_agent_list(agent_str: str) -> list[str]:
+    """
+    Parse comma-separated agent list into individual agent names.
+
+    Args:
+        agent_str: Comma-separated string of agent names (e.g., "claude,copilot,cursor-agent")
+
+    Returns:
+        List of agent names with whitespace stripped
+
+    Examples:
+        >>> parse_agent_list("claude,copilot")
+        ['claude', 'copilot']
+        >>> parse_agent_list("claude, copilot, cursor-agent")
+        ['claude', 'copilot', 'cursor-agent']
+        >>> parse_agent_list("claude")
+        ['claude']
+    """
+    if not agent_str or not agent_str.strip():
+        return []
+
+    # Split by comma and strip whitespace from each agent name
+    agents = [agent.strip() for agent in agent_str.split(",")]
+
+    # Filter out empty strings
+    return [agent for agent in agents if agent]
+
+
+def select_multiple_with_checkboxes(
+    options: dict,
+    prompt_text: str = "Select options (space to toggle, enter to confirm)",
+    default_keys: list[str] = None,
+) -> list[str]:
+    """
+    Interactive multi-selection using checkboxes with Rich Live display.
+
+    Args:
+        options: Dict with keys as option keys and values as descriptions
+        prompt_text: Text to show above the options
+        default_keys: List of default option keys to start with (pre-selected)
+
+    Returns:
+        List of selected option keys
+
+    Examples:
+        >>> options = {"claude": "Claude Code", "copilot": "GitHub Copilot"}
+        >>> selected = select_multiple_with_checkboxes(options, "Choose AI assistants:")
+        >>> # Returns list like ['claude', 'copilot'] based on user selection
+    """
+    option_keys = list(options.keys())
+    selected_index = 0
+
+    # Track which options are checked (selected)
+    checked_keys = set(default_keys) if default_keys else set()
+
+    # Validate default keys
+    if default_keys:
+        for key in default_keys:
+            if key not in option_keys:
+                console.print(
+                    f"[yellow]Warning: Default key '{key}' not in options[/yellow]"
+                )
+
+    selected_keys = None
+
+    def create_selection_panel():
+        """Create the selection panel with checkboxes."""
+        table = Table.grid(padding=(0, 2))
+        table.add_column(style="cyan", justify="left", width=3)  # Arrow/pointer
+        table.add_column(style="white", justify="left", width=5)  # Checkbox
+        table.add_column(style="white", justify="left")  # Option text
+
+        for i, key in enumerate(option_keys):
+            pointer = "▶" if i == selected_index else " "
+            checkbox = "[✓]" if key in checked_keys else "[ ]"
+
+            if i == selected_index:
+                # Highlight current row
+                table.add_row(
+                    pointer,
+                    f"[cyan]{checkbox}[/cyan]",
+                    f"[cyan]{key}[/cyan] [dim]({options[key]})[/dim]",
+                )
+            else:
+                table.add_row(
+                    pointer, checkbox, f"[cyan]{key}[/cyan] [dim]({options[key]})[/dim]"
+                )
+
+        table.add_row("", "", "")
+        table.add_row(
+            "",
+            "",
+            "[dim]↑/↓: navigate | Space: toggle | Enter: confirm | Esc: cancel[/dim]",
+        )
+
+        # Show selection count
+        count_text = f"[dim]Selected: {len(checked_keys)} items[/dim]"
+        table.add_row("", "", count_text)
+
+        return Panel(
+            table,
+            title=f"[bold]{prompt_text}[/bold]",
+            border_style="cyan",
+            padding=(1, 2),
+        )
+
+    console.print()
+
+    def run_selection_loop():
+        nonlocal selected_keys, selected_index, checked_keys
+        with Live(
+            create_selection_panel(),
+            console=console,
+            transient=True,
+            auto_refresh=False,
+        ) as live:
+            while True:
+                try:
+                    key = get_key()
+                    if key == "up":
+                        selected_index = (selected_index - 1) % len(option_keys)
+                    elif key == "down":
+                        selected_index = (selected_index + 1) % len(option_keys)
+                    elif key == " ":  # Space to toggle checkbox
+                        current_key = option_keys[selected_index]
+                        if current_key in checked_keys:
+                            checked_keys.remove(current_key)
+                        else:
+                            checked_keys.add(current_key)
+                    elif key == "enter":
+                        selected_keys = list(checked_keys)
+                        break
+                    elif key == "escape":
+                        console.print("\n[yellow]Selection cancelled[/yellow]")
+                        raise typer.Exit(1)
+
+                    live.update(create_selection_panel(), refresh=True)
+
+                except KeyboardInterrupt:
+                    console.print("\n[yellow]Selection cancelled[/yellow]")
+                    raise typer.Exit(1)
+
+    run_selection_loop()
+
+    if selected_keys is None:
+        console.print("\n[red]Selection failed.[/red]")
+        raise typer.Exit(1)
+
+    return selected_keys
 
 
 console = Console()
@@ -933,7 +1084,8 @@ def download_template_from_github(
 
 def download_and_extract_two_stage(
     project_path: Path,
-    ai_assistant: str,
+    ai_assistants: list[str]
+    | str,  # Support both list and single string for backward compatibility
     script_type: str,
     is_current_dir: bool = False,
     *,
@@ -946,11 +1098,21 @@ def download_and_extract_two_stage(
     extension_version: str = None,
 ) -> Path:
     """Two-stage download: base spec-kit + jp-spec-kit extension overlay.
+
+    Supports single or multiple AI assistants. When multiple assistants are specified,
+    their respective agent directories are all extracted to the project.
+
     Returns project_path. Uses tracker if provided.
     """
+    # Normalize to list for consistent handling
+    if isinstance(ai_assistants, str):
+        ai_assistants = [ai_assistants]
     current_dir = Path.cwd()
     base_zip = None
     ext_zip = None
+
+    # Use first agent for template download (templates contain all agent directories)
+    primary_agent = ai_assistants[0]
 
     # Stage 1: Download base spec-kit
     if tracker:
@@ -960,7 +1122,7 @@ def download_and_extract_two_stage(
 
     try:
         base_zip, base_meta = download_template_from_github(
-            ai_assistant,
+            primary_agent,  # Use primary agent for download
             current_dir,
             script_type=script_type,
             verbose=verbose and tracker is None,
@@ -992,7 +1154,7 @@ def download_and_extract_two_stage(
 
     try:
         ext_zip, ext_meta = download_template_from_github(
-            ai_assistant,
+            primary_agent,  # Use primary agent for download
             current_dir,
             script_type=script_type,
             verbose=verbose and tracker is None,
@@ -1149,7 +1311,8 @@ def download_and_extract_two_stage(
 
 def download_and_extract_template(
     project_path: Path,
-    ai_assistant: str,
+    ai_assistants: list[str]
+    | str,  # Support both list and single string for backward compatibility
     script_type: str,
     is_current_dir: bool = False,
     *,
@@ -1163,15 +1326,25 @@ def download_and_extract_template(
     version: str = None,
 ) -> Path:
     """Download the latest release and extract it to create a new project.
+
+    Supports single or multiple AI assistants. When multiple assistants are specified,
+    their respective agent directories are all extracted to the project.
+
     Returns project_path. Uses tracker if provided (with keys: fetch, download, extract, cleanup)
     """
+    # Normalize to list for consistent handling
+    if isinstance(ai_assistants, str):
+        ai_assistants = [ai_assistants]
+
+    # Use first agent for template download (templates contain all agent directories)
+    primary_agent = ai_assistants[0]
     current_dir = Path.cwd()
 
     if tracker:
         tracker.start("fetch", "contacting GitHub API")
     try:
         zip_path, meta = download_template_from_github(
-            ai_assistant,
+            primary_agent,  # Use primary agent for download
             current_dir,
             script_type=script_type,
             verbose=verbose and tracker is None,
@@ -1400,7 +1573,7 @@ def init(
     ai_assistant: str = typer.Option(
         None,
         "--ai",
-        help="AI assistant to use: claude, gemini, copilot, cursor-agent, qwen, opencode, codex, windsurf, kilocode, auggie, codebuddy, or q",
+        help="AI assistant(s) to use (comma-separated for multiple): claude, gemini, copilot, cursor-agent, qwen, opencode, codex, windsurf, kilocode, auggie, codebuddy, roo, or q. Example: --ai claude,copilot",
     ),
     script_type: str = typer.Option(
         None, "--script", help="Script type to use: sh or ps"
@@ -1471,13 +1644,15 @@ def init(
     Examples:
         specify init my-project
         specify init my-project --ai claude
+        specify init my-project --ai claude,copilot  # Multiple agents
         specify init my-project --ai copilot --no-git
         specify init --ignore-agent-tools my-project
         specify init . --ai claude         # Initialize in current directory
+        specify init . --ai claude,cursor-agent,copilot  # Multiple agents in current dir
         specify init .                     # Initialize in current directory (interactive AI selection)
         specify init --here --ai claude    # Alternative syntax for current directory
         specify init --here --ai codex
-        specify init --here --ai codebuddy
+        specify init --here --ai codebuddy,claude
         specify init --here
         specify init --here --force  # Skip confirmation when current directory not empty
     """
@@ -1576,37 +1751,73 @@ def init(
                 "[yellow]Git not found - will skip repository initialization[/yellow]"
             )
 
+    # Parse and validate AI assistant selection(s)
+    selected_agents = []
     if ai_assistant:
-        if ai_assistant not in AGENT_CONFIG:
+        # Parse comma-separated list
+        selected_agents = parse_agent_list(ai_assistant)
+
+        # Validate all agents
+        invalid_agents = [
+            agent for agent in selected_agents if agent not in AGENT_CONFIG
+        ]
+        if invalid_agents:
             console.print(
-                f"[red]Error:[/red] Invalid AI assistant '{ai_assistant}'. Choose from: {', '.join(AGENT_CONFIG.keys())}"
+                f"[red]Error:[/red] Invalid AI assistant(s): {', '.join(invalid_agents)}"
+            )
+            console.print(
+                f"[cyan]Valid options:[/cyan] {', '.join(AGENT_CONFIG.keys())}"
             )
             raise typer.Exit(1)
-        selected_ai = ai_assistant
     else:
-        # Create options dict for selection (agent_key: display_name)
+        # Interactive selection: use multi-select UI
         ai_choices = {key: config["name"] for key, config in AGENT_CONFIG.items()}
-        selected_ai = select_with_arrows(
-            ai_choices, "Choose your AI assistant:", "copilot"
+        console.print(
+            "[cyan]Tip:[/cyan] You can select multiple AI assistants (use Space to toggle, Enter to confirm)"
+        )
+        console.print()
+        selected_agents = select_multiple_with_checkboxes(
+            ai_choices,
+            "Choose your AI assistant(s):",
+            default_keys=["copilot"],  # Default to copilot pre-selected
         )
 
+        # Ensure at least one agent is selected
+        if not selected_agents:
+            console.print(
+                "[yellow]No AI assistants selected. Please select at least one.[/yellow]"
+            )
+            raise typer.Exit(1)
+
+    # Check tools for all selected agents that require CLI
     if not ignore_agent_tools:
-        agent_config = AGENT_CONFIG.get(selected_ai)
-        if agent_config and agent_config["requires_cli"]:
-            install_url = agent_config["install_url"]
-            if not check_tool(selected_ai):
-                error_panel = Panel(
-                    f"[cyan]{selected_ai}[/cyan] not found\n"
-                    f"Install from: [cyan]{install_url}[/cyan]\n"
-                    f"{agent_config['name']} is required to continue with this project type.\n\n"
-                    "Tip: Use [cyan]--ignore-agent-tools[/cyan] to skip this check",
-                    title="[red]Agent Detection Error[/red]",
-                    border_style="red",
-                    padding=(1, 2),
-                )
-                console.print()
-                console.print(error_panel)
-                raise typer.Exit(1)
+        missing_tools = []
+        for agent in selected_agents:
+            agent_config = AGENT_CONFIG.get(agent)
+            if agent_config and agent_config["requires_cli"]:
+                if not check_tool(agent):
+                    missing_tools.append((agent, agent_config))
+
+        if missing_tools:
+            # Display error panel for missing tools
+            error_lines = []
+            for agent, config in missing_tools:
+                install_url = config["install_url"]
+                error_lines.append(f"[cyan]{agent}[/cyan] ({config['name']})")
+                error_lines.append(f"  Install from: [cyan]{install_url}[/cyan]")
+                error_lines.append("")
+
+            error_panel = Panel(
+                "\n".join(error_lines)
+                + "\nThese AI assistants require CLI tools to continue.\n\n"
+                "Tip: Use [cyan]--ignore-agent-tools[/cyan] to skip this check",
+                title="[red]Missing Agent Tools[/red]",
+                border_style="red",
+                padding=(1, 2),
+            )
+            console.print()
+            console.print(error_panel)
+            raise typer.Exit(1)
 
     if script_type:
         if script_type not in SCRIPT_TYPE_CHOICES:
@@ -1627,7 +1838,12 @@ def init(
         else:
             selected_script = default_script
 
-    console.print(f"[cyan]Selected AI assistant:[/cyan] {selected_ai}")
+    # Display selected agents
+    agents_display = ", ".join(selected_agents)
+    if len(selected_agents) == 1:
+        console.print(f"[cyan]Selected AI assistant:[/cyan] {agents_display}")
+    else:
+        console.print(f"[cyan]Selected AI assistants:[/cyan] {agents_display}")
     console.print(f"[cyan]Selected script type:[/cyan] {selected_script}")
 
     tracker = StepTracker("Initialize Specify Project")
@@ -1636,8 +1852,8 @@ def init(
 
     tracker.add("precheck", "Check required tools")
     tracker.complete("precheck", "ok")
-    tracker.add("ai-select", "Select AI assistant")
-    tracker.complete("ai-select", f"{selected_ai}")
+    tracker.add("ai-select", "Select AI assistant(s)")
+    tracker.complete("ai-select", f"{agents_display}")
     tracker.add("script-select", "Select script type")
     tracker.complete("script-select", selected_script)
 
@@ -1682,10 +1898,10 @@ def init(
             local_client = httpx.Client(verify=local_ssl_context)
 
             if layered:
-                # Two-stage download: base + extension
+                # Two-stage download: base + extension (supports multiple agents)
                 download_and_extract_two_stage(
                     project_path,
-                    selected_ai,
+                    selected_agents,  # Now a list
                     selected_script,
                     here,
                     verbose=False,
@@ -1697,10 +1913,10 @@ def init(
                     extension_version=extension_version,
                 )
             else:
-                # Single-stage download (legacy mode or base-only)
+                # Single-stage download (legacy mode or base-only, supports multiple agents)
                 download_and_extract_template(
                     project_path,
-                    selected_ai,
+                    selected_agents,  # Now a list
                     selected_script,
                     here,
                     verbose=False,
@@ -1783,13 +1999,24 @@ def init(
         )
         console.print(git_error_panel)
 
-    # Agent folder security notice
-    agent_config = AGENT_CONFIG.get(selected_ai)
-    if agent_config:
-        agent_folder = agent_config["folder"]
+    # Agent folder security notice (for all selected agents)
+    agent_folders = []
+    for agent in selected_agents:
+        agent_config = AGENT_CONFIG.get(agent)
+        if agent_config:
+            agent_folders.append(agent_config["folder"])
+
+    if agent_folders:
+        if len(agent_folders) == 1:
+            folders_text = f"[cyan]{agent_folders[0]}[/cyan]"
+        else:
+            folders_text = ", ".join(
+                [f"[cyan]{folder}[/cyan]" for folder in agent_folders]
+            )
+
         security_notice = Panel(
-            f"Some agents may store credentials, auth tokens, or other identifying and private artifacts in the agent folder within your project.\n"
-            f"Consider adding [cyan]{agent_folder}[/cyan] (or parts of it) to [cyan].gitignore[/cyan] to prevent accidental credential leakage.",
+            f"Some agents may store credentials, auth tokens, or other identifying and private artifacts in their agent folders within your project.\n"
+            f"Consider adding {folders_text} (or parts of them) to [cyan].gitignore[/cyan] to prevent accidental credential leakage.",
             title="[yellow]Agent Folder Security[/yellow]",
             border_style="yellow",
             padding=(1, 2),
@@ -1803,43 +2030,72 @@ def init(
         console.print()
         install_backlog = typer.confirm(
             "[cyan]backlog-md[/cyan] is not installed. Would you like to install it for task management?",
-            default=True
+            default=True,
         )
         if install_backlog:
             target_version = backlog_version or get_backlog_validated_version()
             if target_version:
                 pkg_manager = detect_package_manager()
                 if pkg_manager:
-                    console.print(f"\n[cyan]Installing backlog-md@{target_version}...[/cyan]")
+                    console.print(
+                        f"\n[cyan]Installing backlog-md@{target_version}...[/cyan]"
+                    )
                     try:
                         if pkg_manager == "pnpm":
                             cmd = ["pnpm", "add", "-g", f"backlog-md@{target_version}"]
                         else:
-                            cmd = ["npm", "install", "-g", f"backlog-md@{target_version}"]
+                            cmd = [
+                                "npm",
+                                "install",
+                                "-g",
+                                f"backlog-md@{target_version}",
+                            ]
 
                         subprocess.run(cmd, check=True, capture_output=True, text=True)
 
                         installed_version = check_backlog_installed_version()
                         if installed_version:
-                            console.print(f"[green]backlog-md {installed_version} installed successfully![/green]")
+                            console.print(
+                                f"[green]backlog-md {installed_version} installed successfully![/green]"
+                            )
                         else:
-                            console.print("[yellow]Installation completed but verification failed[/yellow]")
+                            console.print(
+                                "[yellow]Installation completed but verification failed[/yellow]"
+                            )
                     except subprocess.CalledProcessError as e:
-                        console.print(f"[yellow]Installation failed:[/yellow] {e.stderr}")
-                        console.print("[dim]You can install it manually later: specify backlog install[/dim]")
+                        console.print(
+                            f"[yellow]Installation failed:[/yellow] {e.stderr}"
+                        )
+                        console.print(
+                            "[dim]You can install it manually later: specify backlog install[/dim]"
+                        )
                 else:
-                    console.print("[yellow]No Node.js package manager found (pnpm or npm required)[/yellow]")
-                    console.print("[dim]Install backlog-md manually: specify backlog install[/dim]")
+                    console.print(
+                        "[yellow]No Node.js package manager found (pnpm or npm required)[/yellow]"
+                    )
+                    console.print(
+                        "[dim]Install backlog-md manually: specify backlog install[/dim]"
+                    )
             else:
-                console.print("[yellow]Could not determine backlog-md version to install[/yellow]")
-                console.print("[dim]You can install it manually later: specify backlog install[/dim]")
+                console.print(
+                    "[yellow]Could not determine backlog-md version to install[/yellow]"
+                )
+                console.print(
+                    "[dim]You can install it manually later: specify backlog install[/dim]"
+                )
         else:
-            console.print("[dim]You can install backlog-md later with: specify backlog install[/dim]")
+            console.print(
+                "[dim]You can install backlog-md later with: specify backlog install[/dim]"
+            )
     elif backlog_version:
         # User specified a version but backlog is already installed
         console.print()
-        console.print(f"[yellow]backlog-md is already installed (version {current_backlog_version})[/yellow]")
-        console.print(f"[dim]To change version: specify backlog upgrade --version {backlog_version}[/dim]")
+        console.print(
+            f"[yellow]backlog-md is already installed (version {current_backlog_version})[/yellow]"
+        )
+        console.print(
+            f"[dim]To change version: specify backlog upgrade --version {backlog_version}[/dim]"
+        )
 
     steps_lines = []
     if not here:
@@ -1852,7 +2108,7 @@ def init(
         step_num = 2
 
     # Add Codex-specific setup step if needed
-    if selected_ai == "codex":
+    if "codex" in selected_agents:
         codex_path = project_path / ".codex"
         quoted_path = shlex.quote(str(codex_path))
         if os.name == "nt":  # Windows
@@ -2084,33 +2340,55 @@ def upgrade(
             )
             sync_backlog = typer.confirm(
                 "Would you like to sync backlog-md to the recommended version?",
-                default=True
+                default=True,
             )
             if sync_backlog:
                 pkg_manager = detect_package_manager()
                 if pkg_manager:
-                    console.print(f"\n[cyan]Syncing backlog-md to {recommended_version}...[/cyan]")
+                    console.print(
+                        f"\n[cyan]Syncing backlog-md to {recommended_version}...[/cyan]"
+                    )
                     try:
                         if pkg_manager == "pnpm":
-                            cmd = ["pnpm", "add", "-g", f"backlog-md@{recommended_version}"]
+                            cmd = [
+                                "pnpm",
+                                "add",
+                                "-g",
+                                f"backlog-md@{recommended_version}",
+                            ]
                         else:
-                            cmd = ["npm", "install", "-g", f"backlog-md@{recommended_version}"]
+                            cmd = [
+                                "npm",
+                                "install",
+                                "-g",
+                                f"backlog-md@{recommended_version}",
+                            ]
 
                         subprocess.run(cmd, check=True, capture_output=True, text=True)
 
                         new_version = check_backlog_installed_version()
                         if new_version == recommended_version:
-                            console.print(f"[green]backlog-md synced to {new_version}![/green]")
+                            console.print(
+                                f"[green]backlog-md synced to {new_version}![/green]"
+                            )
                         else:
-                            console.print("[yellow]Sync completed but verification failed[/yellow]")
+                            console.print(
+                                "[yellow]Sync completed but verification failed[/yellow]"
+                            )
                     except subprocess.CalledProcessError as e:
                         console.print(f"[yellow]Sync failed:[/yellow] {e.stderr}")
-                        console.print("[dim]You can sync manually: specify backlog upgrade[/dim]")
+                        console.print(
+                            "[dim]You can sync manually: specify backlog upgrade[/dim]"
+                        )
                 else:
                     console.print("[yellow]No Node.js package manager found[/yellow]")
-                    console.print("[dim]You can sync manually: specify backlog upgrade[/dim]")
+                    console.print(
+                        "[dim]You can sync manually: specify backlog upgrade[/dim]"
+                    )
             else:
-                console.print("[dim]You can sync backlog-md later with: specify backlog upgrade[/dim]")
+                console.print(
+                    "[dim]You can sync backlog-md later with: specify backlog upgrade[/dim]"
+                )
     elif not current_backlog_version and recommended_version:
         console.print()
         console.print("[yellow]backlog-md is not installed[/yellow]")
@@ -2174,7 +2452,9 @@ def check():
                     f"[yellow]backlog-md version:[/yellow] {backlog_version} "
                     f"[dim](recommended: {recommended_version})[/dim]"
                 )
-                console.print("[dim]Run 'specify backlog upgrade' to sync to recommended version[/dim]")
+                console.print(
+                    "[dim]Run 'specify backlog upgrade' to sync to recommended version[/dim]"
+                )
 
     console.print("\n[bold green]Specify CLI is ready to use![/bold green]")
 
@@ -2185,7 +2465,9 @@ def check():
         console.print("[dim]Tip: Install an AI assistant for the best experience[/dim]")
 
     if not backlog_version:
-        console.print("[dim]Tip: Install backlog-md for task management: specify backlog install[/dim]")
+        console.print(
+            "[dim]Tip: Install backlog-md for task management: specify backlog install[/dim]"
+        )
 
 
 @app.command()
@@ -2262,7 +2544,9 @@ def dogfood(
 
     for template_file in template_files:
         symlink_path = speckit_commands_dir / template_file.name
-        relative_target = Path("..") / ".." / ".." / "templates" / "commands" / template_file.name
+        relative_target = (
+            Path("..") / ".." / ".." / "templates" / "commands" / template_file.name
+        )
 
         try:
             if symlink_path.exists() or symlink_path.is_symlink():
@@ -2314,9 +2598,7 @@ def dogfood(
     console.print("\n[dim]Note: Restart Claude Code to pick up the new commands.[/dim]")
 
     if errors:
-        console.print(
-            "\n[yellow]Warning:[/yellow] Some symlinks failed to create."
-        )
+        console.print("\n[yellow]Warning:[/yellow] Some symlinks failed to create.")
         console.print(
             "[yellow]On Windows, you may need to enable Developer Mode or run as Administrator.[/yellow]"
         )
@@ -2436,6 +2718,7 @@ def backlog_migrate(
                 backup_counter += 1
 
             import shutil
+
             shutil.copy2(source_path, backup_path)
             console.print(f"[green]Created backup:[/green] {backup_path}\n")
 
@@ -2460,7 +2743,7 @@ def backlog_migrate(
             # Remove backup on failure (if created)
             if backup_path and backup_path.exists():
                 backup_path.unlink()
-                console.print(f"[dim]Removed backup (migration failed)[/dim]")
+                console.print("[dim]Removed backup (migration failed)[/dim]")
 
             raise typer.Exit(1)
 
@@ -2485,19 +2768,16 @@ def backlog_migrate(
 
         # Count completed vs pending
         from .backlog.parser import TaskParser
+
         parser = TaskParser()
         tasks = parser.parse_tasks_file(source_path)
         completed = sum(1 for t in tasks if t.is_completed)
         pending = len(tasks) - completed
 
         if completed > 0:
-            stats_lines.append(
-                f"{'Completed Tasks':<20} [green]{completed}[/green]"
-            )
+            stats_lines.append(f"{'Completed Tasks':<20} [green]{completed}[/green]")
         if pending > 0:
-            stats_lines.append(
-                f"{'Pending Tasks':<20} [cyan]{pending}[/cyan]"
-            )
+            stats_lines.append(f"{'Pending Tasks':<20} [cyan]{pending}[/cyan]")
 
         # Count user stories
         user_stories = set(t.user_story for t in tasks if t.user_story)
@@ -2541,11 +2821,13 @@ def backlog_migrate(
             if backup_path:
                 next_steps.append(f"3. Backup created at: [cyan]{backup_path}[/cyan]")
 
-            next_steps.extend([
-                "",
-                "[dim]You can now track task progress by updating status in task frontmatter[/dim]",
-                "[dim]Use 'specify tasks generate' to regenerate tasks from spec[/dim]",
-            ])
+            next_steps.extend(
+                [
+                    "",
+                    "[dim]You can now track task progress by updating status in task frontmatter[/dim]",
+                    "[dim]Use 'specify tasks generate' to regenerate tasks from spec[/dim]",
+                ]
+            )
 
             console.print(
                 Panel(
@@ -2563,6 +2845,7 @@ def backlog_migrate(
         console.print(f"[red]Error:[/red] {e}")
         if "--debug" in sys.argv:
             import traceback
+
             console.print("\n[yellow]Debug trace:[/yellow]")
             console.print(traceback.format_exc())
         raise typer.Exit(1)
@@ -2981,9 +3264,7 @@ def backlog_upgrade(
 
     # Check if upgrade needed
     if current_version == target_version and not force:
-        console.print(
-            "[green]backlog-md is already at the recommended version[/green]"
-        )
+        console.print("[green]backlog-md is already at the recommended version[/green]")
         raise typer.Exit(0)
 
     # Detect package manager
@@ -3032,9 +3313,7 @@ def backlog_upgrade(
         console.print("\n[bold green]backlog-md upgraded successfully![/bold green]")
         console.print(f"[dim]Version: {new_version}[/dim]")
     else:
-        console.print(
-            "\n[yellow]Upgrade completed but verification failed[/yellow]"
-        )
+        console.print("\n[yellow]Upgrade completed but verification failed[/yellow]")
         console.print(
             f"[dim]Expected: {target_version}, Got: {new_version or 'not found'}[/dim]"
         )
