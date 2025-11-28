@@ -54,6 +54,35 @@ Signed-off-by: Your Name <your.email@example.com>
 
 Commits without sign-off will block PRs from being merged.
 
+## Parallel Task Execution (NON-NEGOTIABLE)
+
+### Git Worktree Requirements
+When executing tasks in parallel, git worktrees MUST be used to isolate work:
+
+1. **Worktree name must match branch name** - The worktree directory name MUST be identical to the branch name
+   ```bash
+   # Correct: worktree name matches branch name
+   git worktree add ../feature-auth feature-auth
+
+   # Wrong: mismatched names
+   git worktree add ../work1 feature-auth
+   ```
+
+2. **One branch per worktree** - Each parallel task gets its own worktree and branch
+
+3. **Clean isolation** - Worktrees prevent merge conflicts and allow simultaneous work on multiple features
+
+4. **Worktree cleanup** - Remove worktrees when work is complete:
+   ```bash
+   git worktree remove ../feature-auth
+   ```
+
+This ensures:
+- Clear mapping between filesystem locations and branches
+- No accidental commits to wrong branches
+- Easy identification of which worktree corresponds to which task
+- Clean parallel development without interference
+
 ## [SECTION_2_NAME]
 <!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
 

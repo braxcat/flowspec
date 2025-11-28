@@ -387,6 +387,30 @@ git commit -m "fix(templates): correct template variable substitution
 Signed-off-by: Your Name <your.email@example.com>"
 ```
 
+### Parallel Task Execution with Git Worktrees
+
+When executing tasks in parallel, git worktrees MUST be used to isolate work:
+
+**Worktree name must match branch name** - The worktree directory name MUST be identical to the branch name:
+
+```bash
+# Correct: worktree name matches branch name
+git worktree add ../feature-auth feature-auth
+
+# Wrong: mismatched names
+git worktree add ../work1 feature-auth
+```
+
+**Key requirements:**
+- One branch per worktree - each parallel task gets its own worktree and branch
+- Clean isolation - worktrees prevent merge conflicts and allow simultaneous work
+- Remove worktrees when complete: `git worktree remove ../feature-auth`
+
+**Benefits:**
+- Clear mapping between filesystem locations and branches
+- No accidental commits to wrong branches
+- Easy identification of which worktree corresponds to which task
+
 ## Testing Instructions
 
 ### Running Tests
