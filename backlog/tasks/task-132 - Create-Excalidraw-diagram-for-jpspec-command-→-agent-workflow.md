@@ -1,9 +1,11 @@
 ---
 id: task-132
 title: Create Excalidraw diagram for /jpspec command → agent workflow
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude-agent-9'
 created_date: '2025-11-28 17:15'
+updated_date: '2025-11-28 18:39'
 labels:
   - documentation
   - diagrams
