@@ -99,7 +99,8 @@ backlog task create "Kubernetes Deployment Configuration" \
   --ac "Configure HPA and pod disruption budgets" \
   --ac "Setup network policies and RBAC" \
   -a @sre-agent \
-  -l infrastructure,kubernetes
+  -l infrastructure,kubernetes \
+  --priority high
 
 # Observability task
 backlog task create "Implement Observability Stack" \
@@ -109,7 +110,8 @@ backlog task create "Implement Observability Stack" \
   --ac "Implement distributed tracing" \
   --ac "Configure alerts for SLO violations" \
   -a @sre-agent \
-  -l infrastructure,observability
+  -l infrastructure,observability \
+  --priority high
 
 # Monitoring/Alerts task (CREATES RUNBOOK TASK)
 backlog task create "Define SLOs and Alerting Rules" \
@@ -119,7 +121,8 @@ backlog task create "Define SLOs and Alerting Rules" \
   --ac "Configure AlertManager rules" \
   --ac "Create runbook task for each alert" \
   -a @sre-agent \
-  -l infrastructure,monitoring
+  -l infrastructure,monitoring \
+  --priority high
 ```
 
 ### When Creating Alerts, Create Runbook Tasks
@@ -135,7 +138,8 @@ backlog task create "Runbook: High Latency Alert Response" \
   --ac "Include rollback procedure" \
   --ac "Add escalation path" \
   -a @sre-agent \
-  -l runbook,operations
+  -l runbook,operations \
+  --priority medium
 ```
 
 ### During Implementation
