@@ -11,7 +11,9 @@ from pathlib import Path
 @pytest.fixture
 def research_command_file():
     """Load the research.md command file."""
-    command_path = Path(__file__).parent.parent / ".claude" / "commands" / "jpspec" / "research.md"
+    command_path = (
+        Path(__file__).parent.parent / ".claude" / "commands" / "jpspec" / "research.md"
+    )
     assert command_path.exists(), f"Research command not found at {command_path}"
     return command_path
 
@@ -19,8 +21,16 @@ def research_command_file():
 @pytest.fixture
 def backlog_instructions_file():
     """Load the _backlog-instructions.md file."""
-    instructions_path = Path(__file__).parent.parent / ".claude" / "commands" / "jpspec" / "_backlog-instructions.md"
-    assert instructions_path.exists(), f"Backlog instructions not found at {instructions_path}"
+    instructions_path = (
+        Path(__file__).parent.parent
+        / ".claude"
+        / "commands"
+        / "jpspec"
+        / "_backlog-instructions.md"
+    )
+    assert instructions_path.exists(), (
+        f"Backlog instructions not found at {instructions_path}"
+    )
     return instructions_path
 
 
@@ -40,7 +50,10 @@ class TestResearchCommandStructure:
         assert "--plain" in content
 
         # Should search for research tasks
-        assert 'backlog search "research"' in content or "backlog search 'research'" in content
+        assert (
+            'backlog search "research"' in content
+            or "backlog search 'research'" in content
+        )
 
     def test_command_checks_existing_tasks(self, research_command_file):
         """Verify command checks for existing research tasks."""
@@ -52,6 +65,87 @@ class TestResearchCommandStructure:
         # Should mention reviewing existing tasks
         assert "existing" in content.lower()
         assert "review" in content.lower() or "check" in content.lower()
+
+
+class TestSharedBacklogInstructions:
+    """Test that both agents receive shared backlog instructions from _backlog-instructions.md (AC#2)."""
+
+    def test_backlog_instructions_file_exists(self, backlog_instructions_file):
+        """Verify _backlog-instructions.md file exists."""
+        assert backlog_instructions_file.exists()
+
+    def test_researcher_includes_shared_backlog_instructions(
+        self, research_command_file
+    ):
+        """Verify Researcher agent prompt includes shared backlog instructions via INCLUDE."""
+        content = research_command_file.read_text()
+
+        # Find Phase 1 section
+        phase1_start = content.find("### Phase 1: Research")
+        phase2_start = content.find("### Phase 2: Business Validation")
+        phase1_section = content[phase1_start:phase2_start]
+
+        # Should include the shared backlog instructions
+        assert (
+            "{{INCLUDE:.claude/commands/jpspec/_backlog-instructions.md}}"
+            in phase1_section
+        )
+        assert "<!--BACKLOG-INSTRUCTIONS-START-->" in phase1_section
+        assert "<!--BACKLOG-INSTRUCTIONS-END-->" in phase1_section
+
+    def test_business_validator_includes_shared_backlog_instructions(
+        self, research_command_file
+    ):
+        """Verify Business Validator agent prompt includes shared backlog instructions via INCLUDE."""
+        content = research_command_file.read_text()
+
+        # Find Phase 2 section
+        phase2_start = content.find("### Phase 2: Business Validation")
+        phase2_section = content[phase2_start:]
+
+        # Should include the shared backlog instructions
+        assert (
+            "{{INCLUDE:.claude/commands/jpspec/_backlog-instructions.md}}"
+            in phase2_section
+        )
+        assert "<!--BACKLOG-INSTRUCTIONS-START-->" in phase2_section
+        assert "<!--BACKLOG-INSTRUCTIONS-END-->" in phase2_section
+
+    def test_both_agents_have_include_before_context(self, research_command_file):
+        """Verify INCLUDE directive appears BEFORE agent context in both phases."""
+        content = research_command_file.read_text()
+
+        # Phase 1: Include should come before agent context
+        phase1_include = content.find(
+            "{{INCLUDE:.claude/commands/jpspec/_backlog-instructions.md}}"
+        )
+        researcher_context = content.find("# AGENT CONTEXT: Senior Research Analyst")
+        assert phase1_include < researcher_context, (
+            "INCLUDE should appear before Researcher context"
+        )
+
+        # Phase 2: Include should come before agent context
+        phase2_start = content.find("### Phase 2: Business Validation")
+        phase2_include = content.find(
+            "{{INCLUDE:.claude/commands/jpspec/_backlog-instructions.md}}", phase2_start
+        )
+        validator_context = content.find(
+            "# AGENT CONTEXT: Senior Business Analyst", phase2_start
+        )
+        assert phase2_include < validator_context, (
+            "INCLUDE should appear before Validator context"
+        )
+
+    def test_shared_instructions_include_count(self, research_command_file):
+        """Verify INCLUDE directive appears exactly twice (once per agent)."""
+        content = research_command_file.read_text()
+
+        include_count = content.count(
+            "{{INCLUDE:.claude/commands/jpspec/_backlog-instructions.md}}"
+        )
+        assert include_count == 2, (
+            f"Expected 2 INCLUDE directives, found {include_count}"
+        )
 
 
 class TestResearcherAgentBacklogInstructions:
@@ -121,7 +215,9 @@ class TestBusinessValidatorAgentBacklogInstructions:
         # Should have backlog task management section in validator section too
         # Count occurrences - should appear in both sections
         backlog_sections = content.count("Backlog.md") + content.count("backlog.md")
-        assert backlog_sections >= 2, "Backlog instructions should appear in both agent sections"
+        assert backlog_sections >= 2, (
+            "Backlog instructions should appear in both agent sections"
+        )
 
     def test_validator_can_create_validation_tasks(self, research_command_file):
         """Verify Business Validator prompt includes task creation instructions."""
@@ -160,7 +256,9 @@ class TestBusinessValidatorAgentBacklogInstructions:
         content = research_command_file.read_text()
 
         # Should show AC checking in validator section
-        validator_section_start = content.find("# AGENT CONTEXT: Senior Business Analyst")
+        validator_section_start = content.find(
+            "# AGENT CONTEXT: Senior Business Analyst"
+        )
         validator_section = content[validator_section_start:]
         assert "--check-ac" in validator_section
 
@@ -218,8 +316,12 @@ class TestResearchWorkflowIntegration:
         assert 'backlog task create "Research:' in content
 
         # Should have acceptance criteria for all research areas
-        researcher_section = content[content.find("# AGENT CONTEXT: Senior Research Analyst"):]
-        validation_index = researcher_section.find("# AGENT CONTEXT: Senior Business Analyst")
+        researcher_section = content[
+            content.find("# AGENT CONTEXT: Senior Research Analyst") :
+        ]
+        validation_index = researcher_section.find(
+            "# AGENT CONTEXT: Senior Business Analyst"
+        )
         if validation_index > 0:
             researcher_section = researcher_section[:validation_index]
 
@@ -236,12 +338,16 @@ class TestResearchWorkflowIntegration:
         assert 'backlog task create "Business Validation:' in content
 
         # Should have acceptance criteria for all validation areas
-        validator_section = content[content.find("# AGENT CONTEXT: Senior Business Analyst"):]
+        validator_section = content[
+            content.find("# AGENT CONTEXT: Senior Business Analyst") :
+        ]
 
         # Count ACs in validator task creation
         assert "--ac" in validator_section
         ac_count = validator_section.count("--ac")
-        assert ac_count >= 5, "Validation task should have at least 5 acceptance criteria"
+        assert ac_count >= 5, (
+            "Validation task should have at least 5 acceptance criteria"
+        )
 
     def test_both_agents_use_plain_flag(self, research_command_file):
         """Verify both agents use --plain flag for AI-readable output."""
@@ -261,7 +367,9 @@ class TestResearchWorkflowIntegration:
         # Both task types should be high priority
         assert "--priority high" in content
         priority_count = content.count("--priority high")
-        assert priority_count >= 2, "Both research and validation should be high priority"
+        assert priority_count >= 2, (
+            "Both research and validation should be high priority"
+        )
 
 
 class TestAcceptanceCriteriaWorkflow:
@@ -272,7 +380,7 @@ class TestAcceptanceCriteriaWorkflow:
         content = research_command_file.read_text()
 
         # Extract research task creation
-        researcher_section = content[content.find("backlog task create \"Research:"):]
+        researcher_section = content[content.find('backlog task create "Research:') :]
         task_creation_end = researcher_section.find("```")
         task_creation = researcher_section[:task_creation_end]
 
@@ -280,14 +388,19 @@ class TestAcceptanceCriteriaWorkflow:
         assert "market analysis" in task_creation.lower()
         assert "competitive" in task_creation.lower()
         assert "technical feasibility" in task_creation.lower()
-        assert "trends" in task_creation.lower() or "industry trends" in task_creation.lower()
+        assert (
+            "trends" in task_creation.lower()
+            or "industry trends" in task_creation.lower()
+        )
 
     def test_validation_acs_cover_all_areas(self, research_command_file):
         """Verify validation task ACs cover all validation areas."""
         content = research_command_file.read_text()
 
         # Extract validation task creation
-        validator_section = content[content.find("backlog task create \"Business Validation:"):]
+        validator_section = content[
+            content.find('backlog task create "Business Validation:') :
+        ]
         task_creation_end = validator_section.find("```")
         task_creation = validator_section[:task_creation_end]
 
@@ -356,8 +469,8 @@ class TestTaskPriority:
         content = research_command_file.read_text()
 
         # Find research task creation
-        research_task = content[content.find('backlog task create "Research:'):]
-        research_task = research_task[:research_task.find('```')]
+        research_task = content[content.find('backlog task create "Research:') :]
+        research_task = research_task[: research_task.find("```")]
 
         assert "--priority high" in research_task
 
@@ -366,8 +479,10 @@ class TestTaskPriority:
         content = research_command_file.read_text()
 
         # Find validation task creation
-        validation_task = content[content.find('backlog task create "Business Validation:'):]
-        validation_task = validation_task[:validation_task.find('```')]
+        validation_task = content[
+            content.find('backlog task create "Business Validation:') :
+        ]
+        validation_task = validation_task[: validation_task.find("```")]
 
         assert "--priority high" in validation_task
 
@@ -385,14 +500,16 @@ class TestCommandConsistency:
         researcher_section = content[researcher_start:researcher_end]
 
         validator_start = content.find("## Backlog.md Task Management", researcher_end)
-        validator_end = content.find("# TASK: Based on the research findings", validator_start)
+        validator_end = content.find(
+            "# TASK: Based on the research findings", validator_start
+        )
         validator_section = content[validator_start:validator_end]
 
         # Both should follow same workflow steps
         for section in [researcher_section, validator_section]:
             assert "backlog task create" in section
             assert "backlog task edit" in section
-            assert "-s \"In Progress\"" in section
+            assert '-s "In Progress"' in section
             assert "--plan" in section
             assert "--check-ac" in section
             assert "--notes" in section

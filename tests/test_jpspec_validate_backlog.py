@@ -68,6 +68,11 @@ class TestTaskDiscoveryAC1:
         # All backlog commands should use --plain
         list_commands = content.count("backlog task list")
         plain_flags = content.count("--plain")
+        # Should have at least 4 occurrences (one per agent: QA, Security, Tech Writer, Release Manager)
+        marker_count = content.count("{{BACKLOG_INSTRUCTIONS}}")
+        assert marker_count >= 4, (
+            f"Expected at least 4 {{{{BACKLOG_INSTRUCTIONS}}}} markers, found {marker_count}"
+        )
 
         # Should have at least as many --plain flags as list commands
         assert plain_flags >= list_commands, (
