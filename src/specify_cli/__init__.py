@@ -169,7 +169,7 @@ BANNER = """
 """
 
 # Version - keep in sync with pyproject.toml
-__version__ = "0.0.117"
+__version__ = "0.0.118"
 
 TAGLINE = (
     f"(jp extension v{__version__}) GitHub Spec Kit - Spec-Driven Development Toolkit"
