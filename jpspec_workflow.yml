@@ -297,6 +297,12 @@ transitions:
       - type: "prd"
         path: "./docs/prd/{feature}.md"
         required: true
+      - type: "research_report"
+        path: "./docs/research/{feature}-research.md"
+        required: true
+      - type: "business_validation"
+        path: "./docs/research/{feature}-validation.md"
+        required: true
     output_artifacts:
       - type: "adr"
         path: "./docs/adr/ADR-{NNN}-{slug}.md"
