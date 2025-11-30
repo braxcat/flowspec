@@ -170,7 +170,7 @@ run_test \
     "ask" \
     "Should ask for confirmation on clean -fd"
 
-# Test 11b: Git safety - clean -df (alternate order)
+# Test 12: Git safety - clean -df (alternate order)
 run_test \
     "Dangerous git - clean -df" \
     "pre-tool-use-git-safety.py" \
@@ -178,7 +178,7 @@ run_test \
     "ask" \
     "Should ask for confirmation on clean -df (alternate flag order)"
 
-# Test 12: Git safety - safe command (git status)
+# Test 13: Git safety - safe command (git status)
 run_test \
     "Safe git - status" \
     "pre-tool-use-git-safety.py" \
@@ -186,7 +186,7 @@ run_test \
     "allow" \
     "Should allow safe git commands"
 
-# Test 13: Git safety - safe command (git log)
+# Test 14: Git safety - safe command (git log)
 run_test \
     "Safe git - log" \
     "pre-tool-use-git-safety.py" \
@@ -194,7 +194,7 @@ run_test \
     "allow" \
     "Should allow safe git commands"
 
-# Test 14: Git safety - safe command (git diff)
+# Test 15: Git safety - safe command (git diff)
 run_test \
     "Safe git - diff" \
     "pre-tool-use-git-safety.py" \
@@ -202,7 +202,7 @@ run_test \
     "allow" \
     "Should allow safe git commands"
 
-# Test 15: Git safety - non-git command
+# Test 16: Git safety - non-git command
 run_test \
     "Non-git command" \
     "pre-tool-use-git-safety.py" \
