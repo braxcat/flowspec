@@ -11,6 +11,7 @@
 # Options:
 #   --act         Use act (GitHub Actions local runner) instead of direct execution
 #   --job JOB     Run specific job only (requires --act)
+#   --workflow FILE Specify workflow file (optional, for disambiguation)
 #   --list        List available workflow jobs (requires --act)
 #   --help        Show this help message
 #
@@ -109,6 +110,12 @@ if [ -n "$SPECIFIC_JOB" ] && [ "$USE_ACT" = false ]; then
     exit 1
 fi
 
+# Validate --workflow requires --act
+if [ -n "$WORKFLOW_FILE" ] && [ "$USE_ACT" = false ]; then
+    echo -e "${RED}Error: --workflow requires --act${NC}"
+    exit 1
+fi
+
 # Function to print step header
 print_step() {
     echo -e "${BLUE}>>> $1${NC}"
@@ -168,7 +175,11 @@ list_workflow_jobs() {
     echo -e "${BLUE}  Available Workflow Jobs${NC}"
     echo -e "${BLUE}========================================${NC}"
     echo ""
-    act -l
+    if [ -n "$WORKFLOW_FILE" ]; then
+        act -l -W "$WORKFLOW_FILE"
+    else
+        act -l
+    fi
 }
 
 # Function to run a specific act job
@@ -286,7 +297,7 @@ run_direct() {
     if uv run ruff format --check .; then
         print_success "Code formatting is correct"
     else
-        print_warning "Code formatting issues found. Run: ruff format ."
+        print_warning "Code formatting issues found. Run: uv run ruff format ."
         OVERALL_STATUS=1
     fi
     echo ""
@@ -296,7 +307,7 @@ run_direct() {
     if uv run ruff check .; then
         print_success "Linting passed"
     else
-        print_error "Linting failed. Run: ruff check . --fix"
+        print_error "Linting failed. Run: uv run ruff check . --fix"
     fi
     echo ""
 

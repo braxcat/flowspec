@@ -62,6 +62,9 @@ Run GitHub Actions workflows locally:
 # Run specific job
 ./scripts/bash/run-local-ci.sh --act --job test
 
+# Specify workflow file
+./scripts/bash/run-local-ci.sh --act --job lint --workflow .github/workflows/ci.yml
+
 # List available jobs
 ./scripts/bash/run-local-ci.sh --act --list
 
