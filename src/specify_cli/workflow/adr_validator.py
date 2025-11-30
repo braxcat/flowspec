@@ -344,7 +344,7 @@ class ADRValidator:
         lines = content.split("\n")
         in_status_section = False
 
-        for i, line in enumerate(lines):
+        for line in lines:
             stripped = line.strip()
 
             # Check for ## Status section
