@@ -3348,28 +3348,19 @@ def backlog_upgrade(
 @app.command()
 def quality(
     spec_path: str = typer.Argument(
-        None,
-        help="Path to specification file (defaults to .specify/spec.md)"
+        None, help="Path to specification file (defaults to .specify/spec.md)"
     ),
     config_path: str = typer.Option(
-        None,
-        "--config",
-        help="Path to custom quality config file"
+        None, "--config", help="Path to custom quality config file"
     ),
     json_output: bool = typer.Option(
-        False,
-        "--json",
-        help="Output as JSON instead of table"
+        False, "--json", help="Output as JSON instead of table"
     ),
     threshold: int = typer.Option(
-        None,
-        "--threshold",
-        help="Minimum passing score (overrides config)"
+        None, "--threshold", help="Minimum passing score (overrides config)"
     ),
     check_only: bool = typer.Option(
-        False,
-        "--check-only",
-        help="Exit non-zero if below threshold (for CI)"
+        False, "--check-only", help="Exit non-zero if below threshold (for CI)"
     ),
 ):
     """Assess specification quality with automated scoring.
@@ -3487,9 +3478,7 @@ def quality(
                 score_color = "red"
 
             table.add_row(
-                name,
-                f"[{score_color}]{score_str}[/{score_color}]",
-                findings_str
+                name, f"[{score_color}]{score_str}[/{score_color}]", findings_str
             )
 
         # Add separator and overall
@@ -3509,7 +3498,7 @@ def quality(
         table.add_row(
             "[bold]OVERALL[/bold]",
             f"[bold {overall_color}]{overall_str}[/bold {overall_color}]",
-            status
+            status,
         )
 
         console.print(table)
@@ -3523,11 +3512,18 @@ def quality(
 
     # Exit with status code if check-only
     if check_only:
+        effective_threshold = (
+            threshold if threshold is not None else config.passing_threshold
+        )
         if not result.passes(threshold):
-            console.print(f"[red]Quality check failed: {result.overall_score:.0f} < {threshold or config.passing_threshold}[/red]")
+            console.print(
+                f"[red]Quality check failed: {result.overall_score:.0f} < {effective_threshold}[/red]"
+            )
             raise typer.Exit(1)
         else:
-            console.print(f"[green]Quality check passed: {result.overall_score:.0f} >= {threshold or config.passing_threshold}[/green]")
+            console.print(
+                f"[green]Quality check passed: {result.overall_score:.0f} >= {effective_threshold}[/green]"
+            )
             raise typer.Exit(0)
 
 

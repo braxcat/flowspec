@@ -63,7 +63,6 @@ class QualityConfig:
             "to be determined",
             "to be decided",
             "???",
-            "???",
         ]
     )
 

@@ -2,7 +2,7 @@
 
 import re
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Any
 from dataclasses import dataclass
 
 
@@ -12,7 +12,7 @@ class AssessmentResult:
 
     score: float  # 0-100
     findings: List[str]
-    details: Dict[str, any] = None
+    details: Dict[str, Any] = None
 
     def __post_init__(self):
         if self.details is None:
@@ -118,8 +118,8 @@ def assess_clarity(spec_content: str, vague_terms: List[str]) -> AssessmentResul
     # Look for numbers, percentages, specific values
     measurable_patterns = [
         r"\b\d+%",  # percentages
-        r"\b\d+\s*(ms|sec|min|hour|day|MB|GB|KB)",  # units
-        r"\b\d+\s*(user|request|transaction|record)",  # countable items
+        r"\b\d+\s*(ms|seconds?|sec|minutes?|min|hours?|hour|days?|day|MB|GB|KB)\b",  # units
+        r"\b\d+\s*(users?|requests?|transactions?|records?)\b",  # countable items
     ]
     measurable_count = sum(
         len(re.findall(p, spec_content)) for p in measurable_patterns
