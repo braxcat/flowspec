@@ -347,6 +347,32 @@ class TestWorkflowValidatorCycleDetection:
         assert len(cycle_errors) >= 1
         assert "cycle" in cycle_errors[0].context
 
+    def test_cycle_path_is_correct(self):
+        """Verify the cycle path correctly includes all states in the cycle."""
+        # Path: A -> B -> C -> B (cycle is B -> C -> B)
+        config = {
+            "states": ["To Do", "A", "B", "C"],
+            "workflows": {},
+            "transitions": [
+                {"from": "To Do", "to": "A"},
+                {"from": "A", "to": "B"},
+                {"from": "B", "to": "C"},
+                {"from": "C", "to": "B"},  # Back edge to B
+            ],
+        }
+        result = WorkflowValidator(config).validate()
+        cycle_errors = [e for e in result.errors if e.code == "CYCLE_DETECTED"]
+        assert len(cycle_errors) == 1
+        cycle_path = cycle_errors[0].context.get("cycle", [])
+        # The cycle should be B -> C -> B (starts and ends at B)
+        assert cycle_path[0] == cycle_path[-1], (
+            "Cycle should start and end at same state"
+        )
+        assert "B" in cycle_path and "C" in cycle_path, "Cycle should include B and C"
+        assert len(cycle_path) == 3, (
+            f"Cycle B->C->B should have 3 elements, got {cycle_path}"
+        )
+
 
 class TestWorkflowValidatorReachability:
     """Tests for state reachability validation."""

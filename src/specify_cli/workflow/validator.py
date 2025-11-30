@@ -286,6 +286,32 @@ class WorkflowValidator:
         if not isinstance(self._agent_loops, dict):
             self._agent_loops = {}
 
+        # Cached graph - built lazily on first access
+        self._graph: dict[str, list[str]] | None = None
+
+    def _build_graph(self) -> dict[str, list[str]]:
+        """Build adjacency list from transitions (cached).
+
+        Returns a graph mapping each state to its list of successor states.
+        The graph is built once and cached for reuse across validation methods.
+
+        Returns:
+            Dictionary mapping state names to lists of successor state names
+        """
+        if self._graph is not None:
+            return self._graph
+
+        self._graph = {state: [] for state in self._states}
+        for transition in self._transitions:
+            if not isinstance(transition, dict):
+                continue
+            from_state = transition.get("from")
+            to_state = transition.get("to")
+            if from_state in self._graph and to_state in self._states:
+                self._graph[from_state].append(to_state)
+
+        return self._graph
+
     def validate(self) -> ValidationResult:
         """Run all validation checks and return combined result.
 
@@ -485,15 +511,7 @@ class WorkflowValidator:
         if not self._states:
             return  # No states to check
 
-        # Build adjacency list from transitions
-        graph: dict[str, list[str]] = {state: [] for state in self._states}
-        for transition in self._transitions:
-            if not isinstance(transition, dict):
-                continue
-            from_state = transition.get("from")
-            to_state = transition.get("to")
-            if from_state in graph and to_state in self._states:
-                graph[from_state].append(to_state)
+        graph = self._build_graph()
 
         # DFS cycle detection
         visited: set[str] = set()
@@ -501,25 +519,34 @@ class WorkflowValidator:
         cycles_found: list[list[str]] = []
 
         def _find_cycle(state: str, path: list[str]) -> bool:
-            """DFS helper to find cycles. Returns True if cycle found."""
+            """DFS helper to find cycles. Returns True if cycle found.
+
+            Args:
+                state: Current state being visited
+                path: Path from initial state to current state (inclusive)
+            """
             visited.add(state)
             rec_stack.add(state)
 
             for next_state in graph.get(state, []):
                 if next_state not in visited:
                     if _find_cycle(next_state, path + [next_state]):
+                        rec_stack.discard(state)  # Clean up before returning
                         return True
                 elif next_state in rec_stack:
                     # Found a back edge - extract cycle path
+                    # path already includes current state, find where cycle starts
                     try:
                         cycle_start = path.index(next_state)
                         cycle_path = path[cycle_start:] + [next_state]
                     except ValueError:
+                        # Shouldn't happen if next_state is in rec_stack
                         cycle_path = [state, next_state]
                     cycles_found.append(cycle_path)
+                    rec_stack.discard(state)  # Clean up before returning
                     return True
 
-            rec_stack.remove(state)
+            rec_stack.discard(state)
             return False
 
         # Check for cycles starting from each unvisited state
@@ -549,15 +576,7 @@ class WorkflowValidator:
         if self.INITIAL_STATE not in self._states:
             return  # Already reported in states_defined check
 
-        # Build adjacency list from transitions
-        graph: dict[str, list[str]] = {state: [] for state in self._states}
-        for transition in self._transitions:
-            if not isinstance(transition, dict):
-                continue
-            from_state = transition.get("from")
-            to_state = transition.get("to")
-            if from_state in graph and to_state in self._states:
-                graph[from_state].append(to_state)
+        graph = self._build_graph()
 
         # BFS from initial state
         reachable: set[str] = {self.INITIAL_STATE}
@@ -606,14 +625,7 @@ class WorkflowValidator:
             )
 
         # Check if states have outgoing transitions (non-terminal behavior)
-        graph: dict[str, list[str]] = {state: [] for state in self._states}
-        for transition in self._transitions:
-            if not isinstance(transition, dict):
-                continue
-            from_state = transition.get("from")
-            to_state = transition.get("to")
-            if from_state in graph and to_state in self._states:
-                graph[from_state].append(to_state)
+        graph = self._build_graph()
 
         # Terminal states shouldn't have outgoing transitions
         for terminal in present_terminals:
