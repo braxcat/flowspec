@@ -39,6 +39,39 @@ Tasks without acceptance criteria will be rejected or archived. This ensures all
 2. Verifiable upon completion
 3. Aligned with the Definition of Done
 
+### PR-Task Synchronization (NON-NEGOTIABLE)
+When creating a PR that completes a backlog task:
+
+1. **Before PR creation**: Mark all completed acceptance criteria
+   ```bash
+   backlog task edit <id> --check-ac 1 --check-ac 2 ...
+   ```
+
+2. **With PR creation**: Update task status and reference the PR
+   ```bash
+   backlog task edit <id> -s Done --notes $'Completed via PR #<number>\n\nStatus: Pending CI verification'
+   ```
+
+3. **PR-Task coupling**: If the PR fails CI or is rejected:
+   - Revert task status to "In Progress"
+   - Uncheck any ACs that weren't actually completed
+   - The backlog must accurately reflect reality
+
+4. **Implementation notes format**:
+   ```
+   Completed via PR #<number>
+
+   Status: Pending CI verification
+
+   Changes:
+   - <summary of changes>
+   ```
+
+This ensures:
+- Backlog always reflects actual project state
+- PRs are traceable to tasks
+- Failed PRs don't leave orphaned "Done" tasks
+
 ## Git Commit Requirements (NON-NEGOTIABLE)
 
 ### DCO Sign-Off Required

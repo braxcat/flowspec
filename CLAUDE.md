@@ -56,6 +56,17 @@ Direct file editing breaks metadata sync, Git tracking, and relationships.
 
 See: `backlog/CLAUDE.md` for detailed guidance.
 
+### PR-Task Synchronization (Required)
+When a PR completes a backlog task, update the task **before or with** PR creation:
+```bash
+# Mark ACs complete and set status with PR reference
+backlog task edit <id> --check-ac 1 --check-ac 2 -s Done \
+  --notes $'Completed via PR #<number>\n\nStatus: Pending CI verification'
+```
+
+**If PR fails CI**: Revert task to "In Progress" and uncheck incomplete ACs.
+The backlog must always reflect reality.
+
 ### Git Worktrees for Parallel Work
 Worktree name MUST match branch name:
 ```bash
