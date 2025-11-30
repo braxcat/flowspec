@@ -348,7 +348,11 @@ transitions:
     description: "Deployed to production"
     input_artifacts:
       - type: "qa_report"
+        path: "./docs/qa/{feature}-qa-report.md"
+        required: true
       - type: "security_report"
+        path: "./docs/security/{feature}-security.md"
+        required: true
     output_artifacts:
       - type: "deployment_manifest"
         path: "./deploy/"
