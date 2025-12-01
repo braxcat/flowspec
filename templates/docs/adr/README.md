@@ -58,5 +58,5 @@ Proposed → Accepted → [Deprecated|Superseded]
 ## Related Documentation
 
 - [Workflow Artifact Flow](../../reference/workflow-artifact-flow.md)
-- [ADR Template](../../templates/adr-template.md)
+- [ADR Template](../../adr-template.md)
 - [Michael Nygard's ADR article](https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions)
