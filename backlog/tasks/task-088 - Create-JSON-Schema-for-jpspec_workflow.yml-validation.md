@@ -4,7 +4,7 @@ title: Create JSON Schema for jpspec_workflow.yml validation
 status: Done
 assignee: []
 created_date: '2025-11-28 15:57'
-updated_date: '2025-12-01 03:47'
+updated_date: '2025-12-01 04:09'
 labels:
   - architecture
   - schema
@@ -47,4 +47,9 @@ Completed via PR #168
 https://github.com/jpoley/jp-spec-kit/pull/168
 
 Branch: task-088-workflow-json-schema
+
+PR #170: https://github.com/jpoley/jp-spec-kit/pull/170 (replaces closed #168)
+
+Cleanup:
+- Removed temporary SCHEMA_VALIDATION_SUMMARY.md from commit
 <!-- SECTION:NOTES:END -->

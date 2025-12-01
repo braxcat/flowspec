@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2025-12-01 02:17'
-updated_date: '2025-12-01 03:47'
+updated_date: '2025-12-01 04:09'
 labels:
   - bug
   - github-api
@@ -71,4 +71,11 @@ Files changed:
 All 1102 tests passing.
 
 PR #167: https://github.com/jpoley/jp-spec-kit/pull/167
+
+PR #169: https://github.com/jpoley/jp-spec-kit/pull/169 (replaces closed #167)
+
+Fix details:
+- Added skip_auth parameter to _github_headers
+- Retry logic now properly skips all auth on public repo fallback
+- 26 comprehensive tests added
 <!-- SECTION:NOTES:END -->
