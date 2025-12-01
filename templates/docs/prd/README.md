@@ -49,4 +49,4 @@ PRDs are validated by `PRDValidator` for:
 ## Related Documentation
 
 - [Workflow Artifact Flow](../../reference/workflow-artifact-flow.md)
-- [PRD Template](../../templates/prd-template.md)
+- [PRD Template](../../prd-template.md)
