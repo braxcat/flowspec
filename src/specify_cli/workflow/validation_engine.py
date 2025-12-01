@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -38,6 +39,9 @@ from typing import Any
 from specify_cli.workflow.transition import Artifact, TransitionSchema, ValidationMode
 
 logger = logging.getLogger(__name__)
+
+# Pattern for valid feature names: ASCII alphanumeric, hyphens, and underscores only
+VALID_FEATURE_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
 
 
 @dataclass
@@ -395,11 +399,20 @@ class TransitionValidator:
             TransitionValidationResult indicating whether a merged PR exists.
         """
         feature = context.get("feature", "")
-        if not feature:
+        if not feature or not feature.strip():
             logger.error("PULL_REQUEST validation requires 'feature' in context")
             return TransitionValidationResult(
                 passed=False,
                 message="Cannot validate PR: feature name not provided",
+                mode=ValidationMode.PULL_REQUEST,
+            )
+
+        # Validate feature name contains only allowed characters
+        if not VALID_FEATURE_NAME_PATTERN.match(feature):
+            logger.error(f"Invalid feature name: {feature}")
+            return TransitionValidationResult(
+                passed=False,
+                message="Invalid feature name format",
                 mode=ValidationMode.PULL_REQUEST,
             )
 
