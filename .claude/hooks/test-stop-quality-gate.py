@@ -56,26 +56,25 @@ def test_no_pr_mention():
     print("  ✓ Allows stop when no PR detected")
 
 
-def test_pr_mention_no_tasks():
-    """Test: PR mention with no In Progress tasks should allow stop."""
-    print("\nTest 2: PR mention, no In Progress tasks")
-    # Note: task-189 may be In Progress during development
-    # This test expects blocking if task-189 is present
+def test_pr_mention_with_existing_tasks():
+    """Test: PR mention behavior depends on In Progress tasks state."""
+    print("\nTest 2: PR mention with existing In Progress tasks check")
     response = run_hook("Now let's create a pull request for this feature")
 
-    # Check if task-189 is In Progress
-
+    # Check current In Progress tasks
     result = subprocess.run(
         ["backlog", "task", "list", "--plain", "-s", "In Progress"],
         capture_output=True,
         text=True,
     )
-    has_189 = "task-189" in result.stdout
+    has_in_progress = bool(result.stdout.strip()) and "task-" in result.stdout
 
-    if has_189:
-        # If task-189 is In Progress, should block
-        assert response["continue"] is False, "Should block when task-189 In Progress"
-        print("  ✓ Blocks stop when task-189 In Progress (expected during dev)")
+    if has_in_progress:
+        # If any In Progress tasks exist, should block
+        assert response["continue"] is False, (
+            "Should block when In Progress tasks exist"
+        )
+        print("  ✓ Blocks stop when In Progress tasks exist (as expected)")
     else:
         # If no tasks, should allow
         assert response["continue"] is True, "Should allow stop when no tasks"
@@ -145,6 +144,8 @@ def test_pr_mention_with_tasks():
                         subprocess.run(
                             ["backlog", "task", "archive", task_id], capture_output=True
                         )
+
+
 def test_various_pr_phrases():
     """Test: Various PR phrase patterns should be detected."""
     print("\nTest 4: Various PR phrase patterns")
@@ -329,7 +330,7 @@ def main():
 
     tests = [
         test_no_pr_mention,
-        test_pr_mention_no_tasks,
+        test_pr_mention_with_existing_tasks,
         test_pr_mention_with_tasks,
         test_various_pr_phrases,
         test_empty_conversation,
