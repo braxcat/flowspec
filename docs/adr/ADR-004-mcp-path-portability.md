@@ -1,4 +1,4 @@
-# ADR-004: MCP Configuration Path Portability
+# ADR-005: MCP Configuration Path Portability
 
 ## Status
 Accepted
