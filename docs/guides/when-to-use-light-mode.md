@@ -76,6 +76,9 @@ If a feature becomes more complex than expected:
 3. Run `/jpspec:research` if needed
 4. Run `/jpspec:plan` for detailed planning
 
+## Downgrading from Full Mode to Light Mode
+
+Downgrading from full mode to light mode is **not supported**. Once you have upgraded to full mode and generated the additional documentation and files, reverting to light mode is not recommended, as it may result in loss of important information and constitutional compliance. If you need a simpler workflow, start a new feature using light mode.
 ## Time Savings
 
 | Phase | Full Mode | Light Mode | Savings |
