@@ -1,8 +1,30 @@
-"""Tests for spec-light mode workflow functionality."""
+"""Tests for spec-light mode workflow functionality.
+
+These tests validate the light mode workflow feature which provides a streamlined
+~60% faster workflow by skipping the research phase for medium-complexity features.
+"""
 
 from pathlib import Path
+from typing import Optional
 
 import pytest
+
+
+def get_project_root() -> Path:
+    """Get the project root directory reliably."""
+    test_file = Path(__file__).resolve()
+    # tests/test_spec_light_mode.py -> project root
+    return test_file.parent.parent
+
+
+def safe_read_file(file_path: Path) -> Optional[str]:
+    """Safely read a file, returning None if it doesn't exist or can't be read."""
+    try:
+        if file_path.exists() and file_path.is_file():
+            return file_path.read_text(encoding="utf-8")
+    except (OSError, IOError, PermissionError):
+        pass
+    return None
 
 
 class TestLightModeDetection:
@@ -13,13 +35,15 @@ class TestLightModeDetection:
         marker_file = tmp_path / ".jpspec-light-mode"
 
         # Simulate light mode init creating the marker
-        marker_file.write_text(
+        marker_content = (
             "# Light mode enabled - ~60% faster workflow (example: 135 min → 50 min)\n"
             "# See docs/guides/when-to-use-light-mode.md for details\n"
         )
+        marker_file.write_text(marker_content, encoding="utf-8")
 
-        assert marker_file.exists()
-        content = marker_file.read_text()
+        assert marker_file.exists(), "Marker file should be created"
+        content = safe_read_file(marker_file)
+        assert content is not None, "Should be able to read marker file"
         assert "Light mode enabled" in content
         assert "60% faster" in content
 
@@ -27,15 +51,29 @@ class TestLightModeDetection:
         """Detection function should correctly identify light mode projects."""
 
         def is_light_mode(project_path: Path) -> bool:
-            """Check if project is in light mode."""
-            return (project_path / ".jpspec-light-mode").exists()
+            """Check if project is in light mode.
+
+            Args:
+                project_path: Path to the project root directory
+
+            Returns:
+                True if the project is in light mode, False otherwise
+            """
+            if not project_path.is_dir():
+                return False
+            marker = project_path / ".jpspec-light-mode"
+            return marker.exists() and marker.is_file()
 
         # No marker = not light mode
-        assert not is_light_mode(tmp_path)
+        assert not is_light_mode(tmp_path), "Should not be light mode without marker"
 
         # With marker = light mode
         (tmp_path / ".jpspec-light-mode").touch()
-        assert is_light_mode(tmp_path)
+        assert is_light_mode(tmp_path), "Should be light mode with marker"
+
+        # Non-existent path should return False, not raise
+        fake_path = tmp_path / "nonexistent"
+        assert not is_light_mode(fake_path), "Non-existent path should return False"
 
     def test_light_mode_marker_content(self, tmp_path: Path) -> None:
         """Light mode marker should contain helpful information."""
@@ -44,9 +82,10 @@ class TestLightModeDetection:
             "# Light mode enabled - ~60% faster workflow (example: 135 min → 50 min)\n"
             "# See docs/guides/when-to-use-light-mode.md for details\n"
         )
-        marker_file.write_text(expected_content)
+        marker_file.write_text(expected_content, encoding="utf-8")
 
-        content = marker_file.read_text()
+        content = safe_read_file(marker_file)
+        assert content is not None, "Should be able to read marker file"
         assert "docs/guides/when-to-use-light-mode.md" in content
 
 
@@ -56,46 +95,60 @@ class TestLightModeTemplates:
     @pytest.fixture
     def templates_path(self) -> Path:
         """Get the path to templates directory."""
-        # Navigate from tests/ to templates/
-        return Path(__file__).parent.parent / "templates"
+        project_root = get_project_root()
+        templates = project_root / "templates"
+        assert templates.is_dir(), f"Templates directory not found: {templates}"
+        return templates
 
     def test_spec_light_template_exists(self, templates_path: Path) -> None:
         """spec-light-template.md should exist."""
         template = templates_path / "spec-light-template.md"
         assert template.exists(), f"Expected {template} to exist"
+        assert template.is_file(), f"Expected {template} to be a file"
 
     def test_plan_light_template_exists(self, templates_path: Path) -> None:
         """plan-light-template.md should exist."""
         template = templates_path / "plan-light-template.md"
         assert template.exists(), f"Expected {template} to exist"
+        assert template.is_file(), f"Expected {template} to be a file"
 
     def test_spec_light_template_has_required_sections(
         self, templates_path: Path
     ) -> None:
         """spec-light template should have required sections."""
         template = templates_path / "spec-light-template.md"
-        content = template.read_text()
+        content = safe_read_file(template)
+        assert content is not None, f"Could not read template: {template}"
 
         # Required sections for spec-light
-        assert "## Overview" in content
-        assert "## User Stories" in content
-        assert "## Acceptance Criteria" in content
-        assert "## Out of Scope" in content
-        assert "## Constitution Compliance" in content
+        required_sections = [
+            "## Overview",
+            "## User Stories",
+            "## Acceptance Criteria",
+            "## Out of Scope",
+            "## Constitution Compliance",
+        ]
+        for section in required_sections:
+            assert section in content, f"Missing required section: {section}"
 
     def test_plan_light_template_has_required_sections(
         self, templates_path: Path
     ) -> None:
         """plan-light template should have required sections."""
         template = templates_path / "plan-light-template.md"
-        content = template.read_text()
+        content = safe_read_file(template)
+        assert content is not None, f"Could not read template: {template}"
 
         # Required sections for plan-light
-        assert "## Approach" in content
-        assert "## Key Components" in content
-        assert "## Testing Strategy" in content
-        assert "## Risks" in content
-        assert "## Constitution Compliance" in content
+        required_sections = [
+            "## Approach",
+            "## Key Components",
+            "## Testing Strategy",
+            "## Risks",
+            "## Constitution Compliance",
+        ]
+        for section in required_sections:
+            assert section in content, f"Missing required section: {section}"
 
     def test_spec_light_template_is_shorter_than_full(
         self, templates_path: Path
@@ -104,15 +157,24 @@ class TestLightModeTemplates:
         spec_full = templates_path / "spec-template.md"
         spec_light = templates_path / "spec-light-template.md"
 
-        if spec_full.exists() and spec_light.exists():
-            full_lines = len(spec_full.read_text().splitlines())
-            light_lines = len(spec_light.read_text().splitlines())
+        # Skip if full template doesn't exist (may be optional)
+        if not spec_full.exists():
+            pytest.skip("Full spec template not found")
 
-            # Light should be at most 50% of full
-            assert light_lines < full_lines * 0.5, (
-                f"Light template ({light_lines} lines) should be much shorter "
-                f"than full template ({full_lines} lines)"
-            )
+        full_content = safe_read_file(spec_full)
+        light_content = safe_read_file(spec_light)
+
+        assert full_content is not None, "Could not read full template"
+        assert light_content is not None, "Could not read light template"
+
+        full_lines = len(full_content.splitlines())
+        light_lines = len(light_content.splitlines())
+
+        # Light should be at most 50% of full
+        assert light_lines < full_lines * 0.5, (
+            f"Light template ({light_lines} lines) should be much shorter "
+            f"than full template ({full_lines} lines)"
+        )
 
     def test_plan_light_template_is_shorter_than_full(
         self, templates_path: Path
@@ -121,15 +183,24 @@ class TestLightModeTemplates:
         plan_full = templates_path / "plan-template.md"
         plan_light = templates_path / "plan-light-template.md"
 
-        if plan_full.exists() and plan_light.exists():
-            full_lines = len(plan_full.read_text().splitlines())
-            light_lines = len(plan_light.read_text().splitlines())
+        # Skip if full template doesn't exist (may be optional)
+        if not plan_full.exists():
+            pytest.skip("Full plan template not found")
 
-            # Light should be at most 50% of full
-            assert light_lines < full_lines * 0.5, (
-                f"Light template ({light_lines} lines) should be much shorter "
-                f"than full template ({full_lines} lines)"
-            )
+        full_content = safe_read_file(plan_full)
+        light_content = safe_read_file(plan_light)
+
+        assert full_content is not None, "Could not read full template"
+        assert light_content is not None, "Could not read light template"
+
+        full_lines = len(full_content.splitlines())
+        light_lines = len(light_content.splitlines())
+
+        # Light should be at most 50% of full
+        assert light_lines < full_lines * 0.5, (
+            f"Light template ({light_lines} lines) should be much shorter "
+            f"than full template ({full_lines} lines)"
+        )
 
 
 class TestLightModeWorkflow:
@@ -138,58 +209,88 @@ class TestLightModeWorkflow:
     @pytest.fixture
     def commands_path(self) -> Path:
         """Get the path to jpspec commands directory."""
-        return Path(__file__).parent.parent / ".claude" / "commands" / "jpspec"
+        project_root = get_project_root()
+        # Check both locations: .claude/commands and templates/commands
+        primary_path = project_root / ".claude" / "commands" / "jpspec"
+        template_path = project_root / "templates" / "commands" / "jpspec"
+
+        if primary_path.is_dir():
+            return primary_path
+        elif template_path.is_dir():
+            return template_path
+        else:
+            pytest.skip("jpspec commands directory not found")
+            return primary_path  # Unreachable but satisfies type checker
 
     def test_research_command_has_light_mode_check(self, commands_path: Path) -> None:
         """research.md should check for light mode and skip if detected."""
         research_cmd = commands_path / "research.md"
-        if research_cmd.exists():
-            content = research_cmd.read_text()
+        if not research_cmd.exists():
+            pytest.skip(f"research.md not found at {research_cmd}")
 
-            # Should have light mode detection
-            assert ".jpspec-light-mode" in content
-            assert "LIGHT MODE" in content or "Light Mode" in content
+        content = safe_read_file(research_cmd)
+        assert content is not None, f"Could not read {research_cmd}"
 
-            # Should indicate skipping
-            assert "SKIP" in content.upper() or "skip" in content
+        # Should have light mode detection
+        assert ".jpspec-light-mode" in content, "Missing light mode marker check"
+        assert "LIGHT MODE" in content or "Light Mode" in content, (
+            "Missing light mode text"
+        )
+
+        # Should indicate skipping
+        content_upper = content.upper()
+        assert "SKIP" in content_upper, "Missing skip indication for light mode"
 
     def test_plan_command_has_light_mode_check(self, commands_path: Path) -> None:
         """plan.md should check for light mode and use simplified planning."""
         plan_cmd = commands_path / "plan.md"
-        if plan_cmd.exists():
-            content = plan_cmd.read_text()
+        if not plan_cmd.exists():
+            pytest.skip(f"plan.md not found at {plan_cmd}")
 
-            # Should have light mode detection
-            assert ".jpspec-light-mode" in content
-            assert "LIGHT MODE" in content or "Light Mode" in content
+        content = safe_read_file(plan_cmd)
+        assert content is not None, f"Could not read {plan_cmd}"
 
-            # Should mention light template
-            assert "plan-light" in content
+        # Should have light mode detection
+        assert ".jpspec-light-mode" in content, "Missing light mode marker check"
+        assert "LIGHT MODE" in content or "Light Mode" in content, (
+            "Missing light mode text"
+        )
+
+        # Should mention light template
+        assert "plan-light" in content, "Missing plan-light template reference"
 
     def test_specify_command_has_light_mode_check(self, commands_path: Path) -> None:
         """specify.md should check for light mode and use simplified spec."""
         specify_cmd = commands_path / "specify.md"
-        if specify_cmd.exists():
-            content = specify_cmd.read_text()
+        if not specify_cmd.exists():
+            pytest.skip(f"specify.md not found at {specify_cmd}")
 
-            # Should have light mode detection
-            assert ".jpspec-light-mode" in content
-            assert "LIGHT MODE" in content or "Light Mode" in content
+        content = safe_read_file(specify_cmd)
+        assert content is not None, f"Could not read {specify_cmd}"
 
-            # Should mention light template
-            assert "spec-light" in content
+        # Should have light mode detection
+        assert ".jpspec-light-mode" in content, "Missing light mode marker check"
+        assert "LIGHT MODE" in content or "Light Mode" in content, (
+            "Missing light mode text"
+        )
+
+        # Should mention light template
+        assert "spec-light" in content, "Missing spec-light template reference"
 
     def test_workflow_state_includes_light_mode_section(
         self, commands_path: Path
     ) -> None:
         """_workflow-state.md should include light mode detection section."""
         workflow_state = commands_path / "_workflow-state.md"
-        if workflow_state.exists():
-            content = workflow_state.read_text()
+        if not workflow_state.exists():
+            pytest.skip(f"_workflow-state.md not found at {workflow_state}")
 
-            # Should have light mode section
-            assert "Light Mode" in content
-            assert ".jpspec-light-mode" in content
+        content = safe_read_file(workflow_state)
+        assert content is not None, f"Could not read {workflow_state}"
+
+        # Should have light mode section
+        assert "Light Mode" in content, "Missing Light Mode section"
+        assert ".jpspec-light-mode" in content, "Missing light mode marker reference"
 
 
 class TestLightModeDocumentation:
@@ -198,38 +299,54 @@ class TestLightModeDocumentation:
     @pytest.fixture
     def docs_path(self) -> Path:
         """Get the path to docs directory."""
-        return Path(__file__).parent.parent / "docs"
+        project_root = get_project_root()
+        docs = project_root / "docs"
+        assert docs.is_dir(), f"Docs directory not found: {docs}"
+        return docs
 
     def test_when_to_use_light_mode_guide_exists(self, docs_path: Path) -> None:
         """Guide for when to use light mode should exist."""
         guide = docs_path / "guides" / "when-to-use-light-mode.md"
         assert guide.exists(), f"Expected {guide} to exist"
+        assert guide.is_file(), f"Expected {guide} to be a file"
 
     def test_guide_explains_criteria(self, docs_path: Path) -> None:
         """Guide should explain when to use light vs full mode."""
         guide = docs_path / "guides" / "when-to-use-light-mode.md"
-        if guide.exists():
-            content = guide.read_text()
+        if not guide.exists():
+            pytest.skip(f"Guide not found at {guide}")
 
-            # Should explain complexity criteria
-            assert "complexity" in content.lower()
+        content = safe_read_file(guide)
+        assert content is not None, f"Could not read {guide}"
 
-            # Should explain what's skipped
-            assert "Skipped" in content or "skipped" in content
-            assert "research" in content.lower()
+        content_lower = content.lower()
 
-            # Should explain what's still required
-            assert "Still Required" in content or "required" in content.lower()
-            assert "Constitutional" in content or "constitution" in content.lower()
+        # Should explain complexity criteria
+        assert "complexity" in content_lower, "Missing complexity criteria"
+
+        # Should explain what's skipped
+        assert "skipped" in content_lower or "skip" in content_lower, (
+            "Missing skip explanation"
+        )
+        assert "research" in content_lower, "Missing research mention"
+
+        # Should explain what's still required
+        assert "required" in content_lower, "Missing required explanation"
+        assert "constitution" in content_lower, "Missing constitution reference"
 
     def test_guide_has_time_savings(self, docs_path: Path) -> None:
         """Guide should document time savings."""
         guide = docs_path / "guides" / "when-to-use-light-mode.md"
-        if guide.exists():
-            content = guide.read_text()
+        if not guide.exists():
+            pytest.skip(f"Guide not found at {guide}")
 
-            # Should mention time savings
-            assert "60%" in content or "Time Savings" in content
+        content = safe_read_file(guide)
+        assert content is not None, f"Could not read {guide}"
+
+        # Should mention time savings
+        assert "60%" in content or "Time Savings" in content, (
+            "Missing time savings information"
+        )
 
 
 class TestLightModeConstitutionalCompliance:
@@ -238,26 +355,45 @@ class TestLightModeConstitutionalCompliance:
     @pytest.fixture
     def templates_path(self) -> Path:
         """Get the path to templates directory."""
-        return Path(__file__).parent.parent / "templates"
+        project_root = get_project_root()
+        templates = project_root / "templates"
+        assert templates.is_dir(), f"Templates directory not found: {templates}"
+        return templates
 
     def test_spec_light_has_constitution_compliance(self, templates_path: Path) -> None:
         """spec-light template should include constitution compliance section."""
         template = templates_path / "spec-light-template.md"
-        if template.exists():
-            content = template.read_text()
+        if not template.exists():
+            pytest.skip(f"Template not found at {template}")
 
-            assert "Constitution Compliance" in content
-            # Should have key compliance items
-            assert "Security" in content or "security" in content
-            assert "Test" in content or "test" in content
+        content = safe_read_file(template)
+        assert content is not None, f"Could not read {template}"
+
+        assert "Constitution Compliance" in content, (
+            "Missing Constitution Compliance section"
+        )
+
+        content_lower = content.lower()
+        # Should have key compliance items
+        assert "security" in content_lower, "Missing security reference"
+        assert "test" in content_lower, "Missing test reference"
 
     def test_plan_light_has_constitution_compliance(self, templates_path: Path) -> None:
         """plan-light template should include constitution compliance section."""
         template = templates_path / "plan-light-template.md"
-        if template.exists():
-            content = template.read_text()
+        if not template.exists():
+            pytest.skip(f"Template not found at {template}")
 
-            assert "Constitution Compliance" in content
-            # Should have key compliance items
-            assert "secrets" in content.lower() or "security" in content.lower()
-            assert "test" in content.lower()
+        content = safe_read_file(template)
+        assert content is not None, f"Could not read {template}"
+
+        assert "Constitution Compliance" in content, (
+            "Missing Constitution Compliance section"
+        )
+
+        content_lower = content.lower()
+        # Should have key compliance items
+        assert "security" in content_lower or "secrets" in content_lower, (
+            "Missing security/secrets reference"
+        )
+        assert "test" in content_lower, "Missing test reference"
