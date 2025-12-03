@@ -943,8 +943,8 @@ After successfully completing this command (all validation phases passed, PR cre
 specify hooks emit validate.completed \
   --spec-id "$FEATURE_ID" \
   --task-id "$TASK_ID" \
-  -f docs/qa/<feature>-qa-report.md \
-  -f docs/security/<feature>-security-report.md
+  -f docs/qa/$FEATURE_ID-qa-report.md \
+  -f docs/security/$FEATURE_ID-security-report.md
 ```
 
 Replace `$FEATURE_ID` with the feature name/identifier and `$TASK_ID` with the backlog task ID if available.

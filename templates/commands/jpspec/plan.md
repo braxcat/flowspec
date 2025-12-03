@@ -405,8 +405,8 @@ After successfully completing this command (architecture and platform designs cr
 specify hooks emit plan.created \
   --spec-id "$FEATURE_ID" \
   --task-id "$TASK_ID" \
-  -f docs/adr/<feature>-architecture.md \
-  -f docs/platform/<feature>-platform.md
+  -f docs/adr/$FEATURE_ID-architecture.md \
+  -f docs/platform/$FEATURE_ID-platform.md
 ```
 
 Replace `$FEATURE_ID` with the feature name/identifier and `$TASK_ID` with the backlog task ID if available.

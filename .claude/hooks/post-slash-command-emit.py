@@ -63,8 +63,8 @@ def extract_feature_id(text: str, is_command: bool = False) -> str | None:
     # Only check output patterns if not parsing a command
     if not is_command:
         patterns = [
-            r"spec:\s*([\w.-]+)",
-            r"[Ff]eature:\s*([\w.-]+)",
+            r"spec:\s*([\w][\w.-]*[\w]|[\w]+)",
+            r"[Ff]eature:\s*([\w][\w.-]*[\w]|[\w]+)",
         ]
         for pattern in patterns:
             match = re.search(pattern, text)

@@ -21,6 +21,7 @@ Example:
 from __future__ import annotations
 
 import json
+import socket
 from pathlib import Path
 from typing import Optional
 
@@ -146,8 +147,6 @@ def hooks_emit(
 
     # Add agent-specific context for agent.* events
     if event_type.startswith("agent."):
-        import socket
-
         # Default agent_id to claude-code@<hostname>
         resolved_agent_id = agent_id or f"claude-code@{socket.gethostname()}"
         context["agent_id"] = resolved_agent_id

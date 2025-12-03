@@ -13,7 +13,7 @@
 #
 # Dependencies: jq, flock (util-linux)
 # Install: apt-get install jq util-linux (Debian/Ubuntu)
-#          brew install jq (macOS - flock via homebrew-core)
+#          brew install jq util-linux (macOS)
 #
 set -e
 

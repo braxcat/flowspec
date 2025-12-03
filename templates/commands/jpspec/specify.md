@@ -272,7 +272,7 @@ After successfully completing this command (PRD created and tasks defined), emit
 specify hooks emit spec.created \
   --spec-id "$FEATURE_ID" \
   --task-id "$TASK_ID" \
-  -f docs/prd/<feature>-spec.md
+  -f docs/prd/$FEATURE_ID-spec.md
 ```
 
 Replace `$FEATURE_ID` with the feature name/identifier and `$TASK_ID` with the backlog task ID if available.

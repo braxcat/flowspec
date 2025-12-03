@@ -425,8 +425,8 @@ After successfully completing this command (deployment complete, operational rea
 specify hooks emit deploy.completed \
   --spec-id "$FEATURE_ID" \
   --task-id "$TASK_ID" \
-  -f .github/workflows/<feature>.yml \
-  -f k8s/<feature>/
+  -f .github/workflows/$FEATURE_ID.yml \
+  -f k8s/$FEATURE_ID/
 ```
 
 Replace `$FEATURE_ID` with the feature name/identifier and `$TASK_ID` with the backlog task ID if available.

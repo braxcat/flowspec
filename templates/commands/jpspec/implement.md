@@ -731,7 +731,7 @@ After successfully completing this command (implementation done, reviews passed,
 specify hooks emit implement.completed \
   --spec-id "$FEATURE_ID" \
   --task-id "$TASK_ID" \
-  -f src/<feature>/
+  -f src/$FEATURE_ID/
 ```
 
 Replace `$FEATURE_ID` with the feature name/identifier and `$TASK_ID` with the backlog task ID if available.

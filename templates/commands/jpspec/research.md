@@ -403,8 +403,8 @@ After successfully completing this command (research and validation reports gene
 specify hooks emit research.completed \
   --spec-id "$FEATURE_ID" \
   --task-id "$TASK_ID" \
-  -f docs/research/<feature>-research.md \
-  -f docs/research/<feature>-validation.md
+  -f docs/research/$FEATURE_ID-research.md \
+  -f docs/research/$FEATURE_ID-validation.md
 ```
 
 Replace `$FEATURE_ID` with the feature name/identifier and `$TASK_ID` with the backlog task ID if available.

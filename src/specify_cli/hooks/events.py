@@ -17,6 +17,7 @@ Example:
 from __future__ import annotations
 
 import json
+import socket
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
@@ -472,8 +473,6 @@ def create_agent_progress_event(
         ...     status_message="Implementing event emission"
         ... )
     """
-    import socket
-
     context: dict[str, Any] = {
         "agent_id": agent_id,
     }
@@ -515,8 +514,6 @@ def create_agent_started_event(
     Returns:
         Event instance for agent.started.
     """
-    import socket
-
     context: dict[str, Any] = {
         "agent_id": agent_id,
         "machine": machine or socket.gethostname(),
@@ -554,8 +551,6 @@ def create_agent_completed_event(
     Returns:
         Event instance for agent.completed.
     """
-    import socket
-
     context: dict[str, Any] = {
         "agent_id": agent_id,
         "machine": machine or socket.gethostname(),
@@ -608,8 +603,6 @@ def create_agent_handoff_event(
         ...     handoff_message="Planning complete, ready for implementation"
         ... )
     """
-    import socket
-
     context: dict[str, Any] = {
         "agent_id": agent_id,
         "target_agent": target_agent,

@@ -121,7 +121,7 @@ This checks:
 - `agent.blocked` - Agent is waiting for something
 - `agent.completed` - Agent finished task
 - `agent.error` - Agent encountered error
-- `agent.handoff` - Agent handing off to another agent/machine
+- `agent.handoff` - Agent hands off to another agent/machine
 
 ## Common Use Cases
 

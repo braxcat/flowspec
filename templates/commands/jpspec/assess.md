@@ -291,7 +291,7 @@ After successfully completing this command (assessment report generated), emit t
 specify hooks emit workflow.assessed \
   --spec-id "$FEATURE_ID" \
   --task-id "$TASK_ID" \
-  -f docs/assess/<feature>-assessment.md
+  -f docs/assess/$FEATURE_ID-assessment.md
 ```
 
 Replace `$FEATURE_ID` with the feature being assessed and `$TASK_ID` with the backlog task ID if available.

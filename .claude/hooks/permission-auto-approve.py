@@ -14,6 +14,8 @@ Also approves:
 - Bash commands using the 'backlog' CLI tool
 
 All other operations require normal approval flow.
+
+Security: Includes path traversal protection via os.path.normpath() validation.
 """
 
 import json

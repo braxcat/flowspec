@@ -239,7 +239,7 @@ class TestAgentEventFactories:
         assert event.context["status_message"] == "Implementing event emission"
         assert event.context["machine"] == "kinsale"
 
-    def test_create_agent_progress_event_auto_machine(self):
+    def test_create_agent_progress_event_auto_detects_machine(self):
         """Test agent.progress event auto-detects machine hostname."""
         import socket
 
