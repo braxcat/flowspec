@@ -62,22 +62,22 @@ class SQLInjectionClassifier(FindingClassifier):
                 )
 
         # Check for string concatenation (likely TP)
-        # Use regex to handle optional whitespace around operators
+        # Use tuples of (pattern, description) for user-friendly reasoning
         concat_patterns = [
-            r'\+\s*["\']',  # + followed by quote (with optional space)
-            r'["\']\s*\+',  # quote followed by + (with optional space)
-            r'f["\']',  # f-string
-            r"\.format\(",  # .format()
-            r"%\s*\(",  # % formatting (with optional space)
+            (r'\+\s*["\']', "+ followed by quote (possible string concatenation)"),
+            (r'["\']\s*\+', "quote followed by + (possible string concatenation)"),
+            (r'f["\']', "f-string (possible variable interpolation)"),
+            (r"\.format\(", ".format() (possible variable interpolation)"),
+            (r"%\s*\(", "% formatting (possible variable interpolation)"),
         ]
 
-        for pattern in concat_patterns:
+        for pattern, description in concat_patterns:
             if re.search(pattern, code):
                 return ClassificationResult(
                     classification=Classification.TRUE_POSITIVE,
                     confidence=0.8,
                     reasoning=(
-                        f"Found string concatenation pattern: {pattern}. "
+                        f"Found string concatenation pattern: {description}. "
                         "Likely vulnerable to SQL injection."
                     ),
                 )

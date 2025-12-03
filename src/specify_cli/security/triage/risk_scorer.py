@@ -82,16 +82,23 @@ class RiskScorer:
         - Complexity of exploitation
         - Known exploits for this CWE
         """
+        # Exploitability Scoring Scale (0-10):
+        # 9.0-10.0: Trivial to exploit, well-documented attack patterns, automated tools available
+        # 8.0-8.9: Easy to exploit with standard tools, well-known techniques
+        # 7.0-7.9: Moderate complexity, requires some expertise or specific conditions
+        # 6.0-6.9: Complex exploitation, specific configuration or multi-step process
+        # Below 6.0: Difficult to exploit, requires advanced skills or rare conditions
+        #
         # CWE-based exploitability heuristics
         high_exploit_cwes = {
-            "CWE-89": 8.5,  # SQL Injection - well-known attacks
-            "CWE-79": 8.0,  # XSS - trivial exploitation
-            "CWE-78": 9.0,  # OS Command Injection
-            "CWE-22": 7.0,  # Path Traversal
-            "CWE-798": 9.0,  # Hardcoded Credentials - trivial
-            "CWE-502": 7.5,  # Deserialization
-            "CWE-94": 8.5,  # Code Injection
-            "CWE-918": 6.5,  # SSRF
+            "CWE-78": 9.0,  # OS Command Injection - trivial with shell metacharacters
+            "CWE-798": 9.0,  # Hardcoded Credentials - direct access, no exploitation needed
+            "CWE-89": 8.5,  # SQL Injection - well-known patterns, common tools (sqlmap)
+            "CWE-94": 8.5,  # Code Injection - similar to command injection
+            "CWE-79": 8.0,  # XSS - straightforward exploitation, many payloads available
+            "CWE-502": 7.5,  # Deserialization - requires payload crafting, language-specific
+            "CWE-22": 7.0,  # Path Traversal - needs understanding of file structure
+            "CWE-918": 6.5,  # SSRF - requires network access, specific target knowledge
         }
 
         cwe_id = finding.cwe_id

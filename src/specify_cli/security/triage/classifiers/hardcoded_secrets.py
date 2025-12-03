@@ -113,11 +113,16 @@ class HardcodedSecretsClassifier(FindingClassifier):
         """Extract the secret value from code snippet.
 
         Uses specific patterns to find secret assignment values,
-        not just any quoted string.
+        trying most specific patterns first before falling back to
+        generic quoted strings.
+
+        Returns:
+            Extracted secret value, or None if no pattern matches.
         """
-        # More specific patterns for secret assignment
-        # Look for common secret variable names followed by assignment
-        # Note: Multi-line strings are intentionally concatenated for readability
+        # Ordered from most specific to least specific
+        # Try specific secret assignment patterns first, then fall back
+        # to generic quoted strings. This prevents the fallback pattern
+        # from matching before more specific patterns can be tried.
         patterns = [
             # Matches: KEY = "value" or KEY = 'value' (with common secret names)
             (
@@ -131,14 +136,18 @@ class HardcodedSecretsClassifier(FindingClassifier):
                 r'access[_-]?key|auth[_-]?token|credentials?)["\']'
                 r'\s*:\s*["\']([^"\']+)["\']'
             ),
-            # Fallback: quoted string (less specific)
-            r'["\']([^"\']{8,})["\']',  # At least 8 chars
         ]
 
+        # Try specific patterns first
         for pattern in patterns:
             match = re.search(pattern, code)
             if match:
                 return match.group(1)
+
+        # Fallback: any quoted string with 8+ chars (only if specific patterns fail)
+        fallback_match = re.search(r'["\']([^"\']{8,})["\']', code)
+        if fallback_match:
+            return fallback_match.group(1)
 
         return None
 
