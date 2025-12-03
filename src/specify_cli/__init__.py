@@ -4098,7 +4098,7 @@ def ac_coverage_command(
 # Workflow subcommand
 workflow_app = typer.Typer(
     name="workflow",
-    help="Workflow configuration validation and management",
+    help="Validate workflow configuration files",
     add_completion=False,
 )
 app.add_typer(workflow_app, name="workflow")
@@ -4129,6 +4129,11 @@ def workflow_validate(
     Validates jpspec_workflow.yml against:
     1. JSON schema (structural validation)
     2. Semantic validation (circular dependencies, reachability, etc.)
+
+    Exit codes:
+    - 0: Validation passed (warnings are non-blocking)
+    - 1: Validation errors (schema or semantic)
+    - 2: File errors (not found, invalid YAML)
 
     Examples:
         specify workflow validate                    # Validate default config
