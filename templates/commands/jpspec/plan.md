@@ -18,6 +18,8 @@ Check if this project is in light mode:
 # Check for light mode marker
 if [ -f ".jpspec-light-mode" ]; then
   echo "LIGHT MODE DETECTED - Using streamlined planning"
+else
+  echo "FULL MODE - Using complete planning"
 fi
 ```
 
