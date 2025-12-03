@@ -9,7 +9,7 @@ These tests validate that the backend-engineer agent:
 
 import re
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Optional
 
 import pytest
 
@@ -36,12 +36,17 @@ def safe_read_file(file_path: Path) -> Optional[str]:
         if file_path.exists() and file_path.is_file():
             return file_path.read_text(encoding="utf-8")
     except (OSError, IOError, PermissionError):
+        # Suppress file read errors; function returns None if file can't be read
         pass
     return None
 
 
-def parse_frontmatter(content: str) -> Dict[str, str]:
+def parse_frontmatter(content: str) -> dict[str, str]:
     """Parse YAML frontmatter from markdown content.
+
+    Handles the specific format used by Claude agent files where description
+    values may contain unquoted colons (e.g., "user: text"). Uses simple
+    key: value parsing with split on first colon.
 
     Args:
         content: Markdown content with YAML frontmatter.
@@ -57,11 +62,12 @@ def parse_frontmatter(content: str) -> Dict[str, str]:
         raise ValueError("No YAML frontmatter found")
 
     frontmatter_text = match.group(1)
-    result: Dict[str, str] = {}
+    result: dict[str, str] = {}
 
     for line in frontmatter_text.split("\n"):
         line = line.strip()
         if ":" in line and not line.startswith("#"):
+            # Split on first colon only to handle values containing colons
             key, value = line.split(":", 1)
             result[key.strip()] = value.strip()
 
@@ -139,7 +145,7 @@ class TestBackendEngineerFrontmatter:
         return content
 
     @pytest.fixture
-    def frontmatter(self, agent_content: str) -> Dict[str, str]:
+    def frontmatter(self, agent_content: str) -> dict[str, str]:
         """Extract and parse YAML frontmatter."""
         try:
             return parse_frontmatter(agent_content)
@@ -155,14 +161,14 @@ class TestBackendEngineerFrontmatter:
             "Agent file must have closing YAML frontmatter delimiter '\\n---\\n'"
         )
 
-    def test_frontmatter_is_valid(self, frontmatter: Dict[str, str]) -> None:
+    def test_frontmatter_is_valid(self, frontmatter: dict[str, str]) -> None:
         """Frontmatter should be parseable as key-value pairs."""
         assert isinstance(frontmatter, dict), (
             f"Frontmatter should be a dictionary, got {type(frontmatter).__name__}"
         )
         assert len(frontmatter) > 0, "Frontmatter should have at least one field"
 
-    def test_has_required_fields(self, frontmatter: Dict[str, str]) -> None:
+    def test_has_required_fields(self, frontmatter: dict[str, str]) -> None:
         """Frontmatter should have all required fields."""
         for field in REQUIRED_FRONTMATTER_FIELDS:
             assert field in frontmatter, (
@@ -170,13 +176,13 @@ class TestBackendEngineerFrontmatter:
                 f"Available fields: {', '.join(frontmatter.keys())}"
             )
 
-    def test_name_field(self, frontmatter: Dict[str, str]) -> None:
+    def test_name_field(self, frontmatter: dict[str, str]) -> None:
         """Agent name should be correct."""
         assert frontmatter.get("name") == AGENT_NAME, (
             f"Agent name should be '{AGENT_NAME}', got '{frontmatter.get('name')}'"
         )
 
-    def test_description_field(self, frontmatter: Dict[str, str]) -> None:
+    def test_description_field(self, frontmatter: dict[str, str]) -> None:
         """Description should be substantial."""
         description = frontmatter.get("description", "")
         assert isinstance(description, str), (
@@ -187,7 +193,7 @@ class TestBackendEngineerFrontmatter:
             f"got {len(description)} chars"
         )
 
-    def test_color_field(self, frontmatter: Dict[str, str]) -> None:
+    def test_color_field(self, frontmatter: dict[str, str]) -> None:
         """Color should be correct."""
         assert frontmatter.get("color") == EXPECTED_COLOR, (
             f"Backend engineer color should be '{EXPECTED_COLOR}', "
@@ -212,7 +218,7 @@ class TestBackendEngineerTools:
         return content
 
     @pytest.fixture
-    def frontmatter(self, agent_content: str) -> Dict[str, str]:
+    def frontmatter(self, agent_content: str) -> dict[str, str]:
         """Extract and parse YAML frontmatter."""
         try:
             return parse_frontmatter(agent_content)
@@ -220,7 +226,7 @@ class TestBackendEngineerTools:
             pytest.fail(f"Failed to parse frontmatter: {e}")
 
     @pytest.fixture
-    def tools(self, frontmatter: Dict[str, str]) -> list[str]:
+    def tools(self, frontmatter: dict[str, str]) -> list[str]:
         """Extract tools list from frontmatter."""
         tools_str = frontmatter.get("tools", "")
         return [t.strip() for t in tools_str.split(",") if t.strip()]
@@ -275,7 +281,7 @@ class TestBackendEngineerDescription:
         return content
 
     @pytest.fixture
-    def frontmatter(self, agent_content: str) -> Dict[str, str]:
+    def frontmatter(self, agent_content: str) -> dict[str, str]:
         """Extract and parse YAML frontmatter."""
         try:
             return parse_frontmatter(agent_content)
@@ -283,7 +289,7 @@ class TestBackendEngineerDescription:
             pytest.fail(f"Failed to parse frontmatter: {e}")
 
     @pytest.fixture
-    def description(self, frontmatter: Dict[str, str]) -> str:
+    def description(self, frontmatter: dict[str, str]) -> str:
         """Get description from frontmatter."""
         return frontmatter.get("description", "").lower()
 
