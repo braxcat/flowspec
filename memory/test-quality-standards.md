@@ -1,6 +1,6 @@
 # Test Quality Standards
 
-This document captures defensive coding patterns for test files and code examples, learned from fixing fragile tests and broken code examples in task-087, task-191a, task-191b, and task-191c.
+This document captures defensive coding patterns for test files and code examples, learned from fixing fragile tests and broken code examples in task-086, task-087, task-191a, task-191b, and task-191c.
 
 ## CRITICAL: Code Examples Must Be Complete and Runnable
 
@@ -412,6 +412,60 @@ class TestContent:
     """Test the content of the agent."""
 ```
 
+## Use Regex for Structural Assertions, Not Simple String Matching
+
+When testing that content has specific patterns (like conditionals, function definitions), use regex instead of simple string matching:
+
+```python
+# WRONG - Weak assertion that doesn't validate structure
+assert ".jpspec-light-mode" in content, "Missing light mode marker check"
+# This passes even if the string is in a comment or random text!
+```
+
+```python
+# CORRECT - Regex validates actual conditional structure
+import re
+
+# Pattern matches: if [ -f ".jpspec-light-mode" ] or similar conditional
+light_mode_conditional = re.search(
+    r'if\s+\[.*\.jpspec-light-mode.*\]', content
+)
+assert light_mode_conditional is not None, (
+    "Missing conditional check for .jpspec-light-mode "
+    "(expected: if [ -f \".jpspec-light-mode\" ])"
+)
+```
+
+**Why This Matters**:
+- Simple string matching can pass when the pattern is in a comment or example
+- Regex ensures the actual structural pattern exists
+- Better error messages when the assertion fails
+
+## Bash Code Examples Must Be Complete
+
+Bash code examples should include both the if and else branches to show the complete logic:
+
+```bash
+# WRONG - Incomplete bash example missing else clause
+if [ -f ".jpspec-light-mode" ]; then
+  echo "LIGHT MODE DETECTED"
+fi
+# What happens when NOT in light mode? Unclear!
+```
+
+```bash
+# CORRECT - Complete bash example with both branches
+if [ -f ".jpspec-light-mode" ]; then
+  echo "LIGHT MODE DETECTED"
+  # Stop here - research is skipped in light mode
+else
+  echo "FULL MODE - Proceeding with research"
+  # Continue with standard research workflow
+fi
+```
+
+**Why**: Complete examples prevent users from missing important logic paths.
+
 ## Except Clauses Must Have Explanatory Comments
 
 Empty `except` blocks or those that just `pass` must explain why:
@@ -445,10 +499,11 @@ return None
 - [ ] All paths use project root detection
 - [ ] `encoding="utf-8"` on all file reads
 - [ ] `-> None` on all test methods
-- [ ] Constants defined at module level
+- [ ] Constants defined at module level (no magic numbers)
 - [ ] Meaningful assertion messages
 - [ ] Test classes with descriptive docstrings
 - [ ] Empty except clauses have explanatory comments
+- [ ] Use regex for structural assertions (not simple string matching)
 
 ## Checklist for Code Examples in Documentation
 
@@ -457,6 +512,7 @@ return None
 - [ ] Dependencies explained with comments (get_db, User model)
 - [ ] Uses proper validators (EmailStr, not regex for email)
 - [ ] Could be copy-pasted and would run
+- [ ] Bash examples include both if and else branches when applicable
 
 ## Documentation Quality Standards
 
@@ -518,8 +574,35 @@ The root cause of these issues is claiming code is complete without actually run
 
 1. **For test files**: Actually run `pytest` and verify tests pass
 2. **For code examples**: Verify imports exist and types are correct
-3. **For lint**: Actually run `ruff check` and `ruff format`
+3. **For lint**: Actually run `ruff check` AND `ruff format --check` (both must pass!)
 4. **For the full suite**: Run the complete test suite before claiming "done"
+
+### Pre-Commit Checklist (MANDATORY)
+
+Before EVERY commit, run these commands:
+
+```bash
+# 1. Run lint check
+uv run ruff check .
+
+# 2. Run format check (NOT just ruff check - they are different!)
+uv run ruff format --check .
+
+# 3. If format check fails, fix it:
+uv run ruff format .
+
+# 4. Run tests
+uv run pytest tests/
+
+# 5. Commit with DCO sign-off (required for CI)
+git commit -s -m "commit message"
+```
+
+**CRITICAL**: `ruff check` and `ruff format --check` are DIFFERENT commands:
+- `ruff check` - finds code quality issues (unused imports, etc.)
+- `ruff format --check` - finds formatting issues (line length, spacing, etc.)
+
+Both must pass for CI to succeed. Running only one is NOT sufficient.
 
 ### What "Testing Passed" Means
 
@@ -532,7 +615,18 @@ The root cause of these issues is claiming code is complete without actually run
 ### Common Mistakes to Avoid
 
 - "All 28 tests pass" (without running them)
-- "Lint passes" (without running ruff)
+- "Lint passes" (ran `ruff check` but not `ruff format --check`)
 - "This would work" (without verifying imports exist)
+- Forgetting DCO sign-off (`git commit -s` required)
 
 If you say tests pass, you MUST have run them. Period.
+
+### CI Failures and Their Causes
+
+| CI Check | Command | Common Failure Cause |
+|----------|---------|---------------------|
+| lint | `ruff check` | Unused imports, undefined names |
+| lint | `ruff format --check` | Line too long, spacing issues |
+| DCO | n/a | Missing `-s` flag on commit |
+| test | `pytest` | Actual test failures |
+| build | `uv build` | Syntax errors, missing deps |
