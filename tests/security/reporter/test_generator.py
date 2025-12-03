@@ -239,6 +239,25 @@ class TestReportGenerator:
         remediation_ids = [r.finding_id for r in report.remediations]
         assert "F1" not in remediation_ids
 
+    def test_remediations_include_false_positives_when_configured(
+        self, sample_findings
+    ):
+        """Test false positives are included when configured."""
+        config = ReportConfig(include_false_positives=True)
+        generator = ReportGenerator(config)
+
+        triage_results = [
+            MockTriageResult(
+                finding_id="F1", classification=MockClassification.FALSE_POSITIVE
+            ),
+        ]
+
+        report = generator.generate(sample_findings, triage_results)
+
+        # F1 (SQL Injection) should be included when config allows
+        remediation_ids = [r.finding_id for r in report.remediations]
+        assert "F1" in remediation_ids
+
     def test_remediations_limited_by_config(self, sample_findings):
         """Test remediations limited by max_remediations."""
         config = ReportConfig(max_remediations=2)
