@@ -25,6 +25,7 @@ class TestLightModeDetection:
 
     def test_light_mode_detection_function(self, tmp_path: Path) -> None:
         """Detection function should correctly identify light mode projects."""
+
         def is_light_mode(project_path: Path) -> bool:
             """Check if project is in light mode."""
             return (project_path / ".jpspec-light-mode").exists()
@@ -68,7 +69,9 @@ class TestLightModeTemplates:
         template = templates_path / "plan-light-template.md"
         assert template.exists(), f"Expected {template} to exist"
 
-    def test_spec_light_template_has_required_sections(self, templates_path: Path) -> None:
+    def test_spec_light_template_has_required_sections(
+        self, templates_path: Path
+    ) -> None:
         """spec-light template should have required sections."""
         template = templates_path / "spec-light-template.md"
         content = template.read_text()
@@ -80,7 +83,9 @@ class TestLightModeTemplates:
         assert "## Out of Scope" in content
         assert "## Constitution Compliance" in content
 
-    def test_plan_light_template_has_required_sections(self, templates_path: Path) -> None:
+    def test_plan_light_template_has_required_sections(
+        self, templates_path: Path
+    ) -> None:
         """plan-light template should have required sections."""
         template = templates_path / "plan-light-template.md"
         content = template.read_text()
@@ -92,7 +97,9 @@ class TestLightModeTemplates:
         assert "## Risks" in content
         assert "## Constitution Compliance" in content
 
-    def test_spec_light_template_is_shorter_than_full(self, templates_path: Path) -> None:
+    def test_spec_light_template_is_shorter_than_full(
+        self, templates_path: Path
+    ) -> None:
         """Light template should be significantly shorter than full template."""
         spec_full = templates_path / "spec-template.md"
         spec_light = templates_path / "spec-light-template.md"
@@ -107,7 +114,9 @@ class TestLightModeTemplates:
                 f"than full template ({full_lines} lines)"
             )
 
-    def test_plan_light_template_is_shorter_than_full(self, templates_path: Path) -> None:
+    def test_plan_light_template_is_shorter_than_full(
+        self, templates_path: Path
+    ) -> None:
         """Light plan template should be significantly shorter than full."""
         plan_full = templates_path / "plan-template.md"
         plan_light = templates_path / "plan-light-template.md"
@@ -170,7 +179,9 @@ class TestLightModeWorkflow:
             # Should mention light template
             assert "spec-light" in content
 
-    def test_workflow_state_includes_light_mode_section(self, commands_path: Path) -> None:
+    def test_workflow_state_includes_light_mode_section(
+        self, commands_path: Path
+    ) -> None:
         """_workflow-state.md should include light mode detection section."""
         workflow_state = commands_path / "_workflow-state.md"
         if workflow_state.exists():
