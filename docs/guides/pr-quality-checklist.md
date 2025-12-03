@@ -6,41 +6,10 @@ This checklist ensures PRs pass CI and meet quality standards before submission.
 
 Run this before every PR:
 
+Run the pre-PR check script before every PR:
+
 ```bash
-#!/bin/bash
-# scripts/bash/pre-pr-check.sh
-
-set -e
-
-echo "=== Pre-PR Quality Check ==="
-
-# 1. DCO Sign-off
-echo "Checking DCO sign-off..."
-if ! git log -1 --format="%B" | grep -qi "signed-off-by"; then
-    echo "ERROR: Missing DCO sign-off. Use: git commit --amend -s"
-    exit 1
-fi
-echo "✓ DCO sign-off present"
-
-# 2. Ruff Lint
-echo "Running ruff check..."
-ruff check .
-echo "✓ Ruff lint passed"
-
-# 3. Ruff Format
-echo "Checking ruff format..."
-ruff format --check .
-echo "✓ Ruff format passed"
-
-# 4. Tests
-echo "Running tests..."
-uv run pytest tests/ -q
-echo "✓ All tests passed"
-
-echo ""
-echo "=== All checks passed! Ready for PR ==="
-```
-
+./scripts/bash/pre-pr-check.sh
 ## Mandatory Checks
 
 ### 1. DCO Sign-off (Developer Certificate of Origin)
