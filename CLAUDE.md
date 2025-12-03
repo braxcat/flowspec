@@ -211,9 +211,9 @@ Additional context loaded when working in specific directories:
 
 @import memory/claude-hooks.md
 
-@import memory/claude-thinking.md
-
 @import memory/claude-skills.md
+
+@import memory/claude-thinking.md
 
 ## Quick Troubleshooting
 
