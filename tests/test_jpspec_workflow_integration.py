@@ -161,7 +161,7 @@ def test_integration_test_file_exists():
 
 
 # =============================================================================
-# AC #2: /jpspec:specify State Transition (To Do → Specified)
+# AC #2: /jpspec:specify State Transition (Assessed → Specified)
 # =============================================================================
 
 
