@@ -39,7 +39,7 @@ async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):  # 
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, EmailStr, Field  # Use EmailStr for email validation!
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -50,32 +50,65 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 
 class UserCreate(BaseModel):
+    """Request model for user creation."""
+
     email: EmailStr  # Robust email validation, not weak regex
     name: str = Field(..., min_length=1, max_length=100)
 
 
 class UserResponse(BaseModel):
+    """Response model for user data."""
+
     id: int
     email: str
     name: str
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+@router.post("/", response_model=UserResponse, status_code=201)
+async def create_user(
+    user: UserCreate,
+    db: AsyncSession = Depends(get_db),
+) -> UserResponse:
+    """Create a new user."""
+    # Check if email already exists
+    existing = await db.scalar(select(User).where(User.email == user.email))
+    if existing:
+        raise HTTPException(status_code=409, detail="Email already registered")
+
+    # Create new user
+    new_user = User(email=user.email, name=user.name)
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
+    return new_user
 ```
 
 ### Exception Handler Example
 
 ```python
-# WRONG - Missing imports and undefined app
-@app.exception_handler(UserNotFoundError)
-async def user_not_found_handler(request: Request, exc: UserNotFoundError):  # Request? JSONResponse?
-    return JSONResponse(status_code=404, content={"detail": str(exc)})
+# WRONG - Missing imports, undefined app, undefined UserNotFoundError
+@app.exception_handler(UserNotFoundError)  # app? UserNotFoundError?
+async def user_not_found_handler(request: Request, exc: UserNotFoundError):  # Request?
+    return JSONResponse(status_code=404, content={"detail": str(exc)})  # JSONResponse?
 ```
 
 ```python
-# CORRECT - Complete imports and defined app
+# CORRECT - Complete imports, defined exception class, defined app
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+
+
+# Define custom exception with user_id attribute
+class UserNotFoundError(Exception):
+    """Raised when a user is not found in the database."""
+
+    def __init__(self, user_id: int) -> None:
+        self.user_id = user_id
+        super().__init__(f"User {user_id} not found")
+
 
 app = FastAPI()  # Your FastAPI application instance
 
@@ -84,6 +117,7 @@ app = FastAPI()  # Your FastAPI application instance
 async def user_not_found_handler(
     request: Request, exc: UserNotFoundError
 ) -> JSONResponse:
+    """Convert UserNotFoundError to HTTP 404 response."""
     return JSONResponse(
         status_code=404,
         content={"detail": str(exc), "user_id": exc.user_id},
@@ -95,24 +129,34 @@ async def user_not_found_handler(
 ```python
 # WRONG - Missing imports in test examples
 @pytest.mark.asyncio
-async def test_user_flow(client: AsyncClient):  # AsyncClient from where?
-    response = await client.post("/users/", json={...})
+async def test_user_flow(client: AsyncClient):  # AsyncClient from where? client fixture?
+    response = await client.post("/users/", json={...})  # json={...} is not valid!
 ```
 
 ```python
-# CORRECT - Complete test imports
+# CORRECT - Complete test imports with fixture documentation
 import pytest
 from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
 async def test_user_flow(client: AsyncClient) -> None:
-    """Test complete user creation and retrieval flow."""
+    """Test complete user creation and retrieval flow.
+
+    Args:
+        client: AsyncClient fixture (defined in conftest.py)
+    """
     response = await client.post(
         "/users/",
         json={"email": "test@example.com", "name": "Test User"},
     )
     assert response.status_code == 201
+    user_id = response.json()["id"]
+
+    # Verify user was created
+    response = await client.get(f"/users/{user_id}")
+    assert response.status_code == 200
+    assert response.json()["email"] == "test@example.com"
 ```
 
 ### Checklist for Code Examples
