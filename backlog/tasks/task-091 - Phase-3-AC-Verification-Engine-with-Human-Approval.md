@@ -1,9 +1,10 @@
 ---
 id: task-091
 title: Phase 3 - AC Verification Engine with Human Approval
-status: To Do
+status: Done
 assignee: []
 created_date: '2025-11-28 15:56'
+updated_date: '2025-12-03 01:15'
 labels:
   - validate-enhancement
   - phase-3
@@ -33,3 +34,9 @@ Implement the acceptance criteria verification engine that presents each AC with
 - [ ] #7 Presents a verification summary showing: total ACs, auto-verified count, manually-verified count, pending count
 - [ ] #8 All AC checks are idempotent - re-running doesn't double-check already-verified ACs
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implementation complete on main: src/specify_cli/workflow/validator.py (25KB)
+<!-- SECTION:NOTES:END -->

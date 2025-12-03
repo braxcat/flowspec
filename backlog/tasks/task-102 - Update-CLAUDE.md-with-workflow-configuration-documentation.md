@@ -4,7 +4,7 @@ title: Update CLAUDE.md with workflow configuration documentation
 status: Done
 assignee: []
 created_date: '2025-11-28 15:58'
-updated_date: '2025-12-03 00:19'
+updated_date: '2025-12-03 01:16'
 labels:
   - documentation
   - claude-md
@@ -38,4 +38,6 @@ All ACs already complete in CLAUDE.md:
 - specify workflow validate examples
 - Quick reference table
 - Links to all workflow guides
+
+CLAUDE.md updated with Workflow Configuration section via PR #173
 <!-- SECTION:NOTES:END -->
