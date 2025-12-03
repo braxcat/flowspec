@@ -36,6 +36,7 @@ def safe_read_file(file_path: Path) -> Optional[str]:
         if file_path.exists() and file_path.is_file():
             return file_path.read_text(encoding="utf-8")
     except (OSError, IOError, PermissionError):
+        # Suppress file read errors; function returns None if file can't be read
         pass
     return None
 

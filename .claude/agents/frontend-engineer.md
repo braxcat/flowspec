@@ -20,10 +20,25 @@ You are an expert frontend engineer specializing in modern web development. You 
 ### Component Structure
 
 ```tsx
-// Good: Typed, accessible, performant
+// Good: Typed, accessible, performant - complete, runnable example
+import { cn } from "@/lib/utils"; // className merge utility (e.g., clsx + tailwind-merge)
+
+// Style variants as const objects for type safety
+const variants = {
+  primary: "bg-blue-600 text-white hover:bg-blue-700",
+  secondary: "bg-gray-200 text-gray-900 hover:bg-gray-300",
+  ghost: "bg-transparent hover:bg-gray-100",
+} as const;
+
+const sizes = {
+  sm: "px-3 py-1 text-sm",
+  md: "px-4 py-2",
+  lg: "px-6 py-3 text-lg",
+} as const;
+
 interface ButtonProps {
-  variant: 'primary' | 'secondary' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
+  variant: keyof typeof variants;
+  size?: keyof typeof sizes;
   disabled?: boolean;
   onClick?: () => void;
   children: React.ReactNode;
@@ -31,7 +46,7 @@ interface ButtonProps {
 
 export function Button({
   variant,
-  size = 'md',
+  size = "md",
   disabled = false,
   onClick,
   children,
@@ -42,7 +57,6 @@ export function Button({
       className={cn(variants[variant], sizes[size])}
       disabled={disabled}
       onClick={onClick}
-      aria-disabled={disabled}
     >
       {children}
     </button>
