@@ -1,5 +1,6 @@
 ---
 description: Create or update feature specifications using PM planner agent (manages /speckit.tasks).
+mode: agent
 ---
 
 ## User Input
