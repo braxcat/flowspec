@@ -74,7 +74,7 @@ make dev-validate
 make dev-status
 ```
 
-For advanced troubleshooting, see [Dev-Setup Consistency Guide](docs/reference/dev-setup-consistency.md).
+For detailed workflows, troubleshooting, and advanced scenarios, see [Dev-Setup Consistency Guide](docs/reference/dev-setup-consistency.md).
 
 ### Platform Notes
 
