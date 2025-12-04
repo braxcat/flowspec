@@ -912,22 +912,21 @@ These rules MUST appear in all constitution tiers:
 1. **Artifact Progression**: PRD → Functional Spec → Technical Spec → ADR → Implementation → Runbook
 2. **Implementation = Code + Docs + Tests**: All three required for completion
 3. **DCO Sign-off**: `git commit -s` on all commits
-4. **No Direct Commits to Main**: All changes via PR (except light tier)
-5. **Task Quality**: Acceptance criteria required on all tasks
+4. **Task Quality**: Acceptance criteria required on all tasks
 6. **PR-Task Synchronization**: PRs reference tasks, tasks reference PRs
 
 ## Appendix B: Tier-Specific Rules
 
 ### Light Tier
 
-- **Git**: Feature branches encouraged, but direct commits to main allowed ("yolo mode")
+- **Git**: Feature branches encouraged. Direct commits to main are allowed ("yolo mode"); PRs are optional.
 - **Review**: Code review when time permits
 - **Testing**: Tests for critical paths
 - **Enforcement**: Warnings only, can proceed
 
 ### Medium Tier
 
-- **Git**: All changes via feature branches, no direct commits to main
+- **Git**: All changes must go through Pull Requests (PRs) via feature branches; direct commits to main are not allowed.
 - **Review**: Minimum one reviewer required
 - **Testing**: Unit + integration tests, 70% coverage target
 - **Enforcement**: Warning + confirmation prompt
