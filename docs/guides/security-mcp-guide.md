@@ -245,24 +245,24 @@ List all security findings with optional filtering.
 
 **Query Parameters:**
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `severity` | string | Filter by severity (critical, high, medium, low, info) |
-| `scanner` | string | Filter by scanner (semgrep, trivy, etc.) |
-| `limit` | integer | Maximum findings to return (default: 100) |
+> **Note:** The `security://findings` resource does **not** support query parameters for server-side filtering. All filtering (by severity, scanner, or limiting results) must be performed client-side after retrieving the full list of findings.
 
 **Example:**
 
 ```python
 async with Client("jpspec-security") as client:
-    # Get all critical findings
-    critical = await client.read_resource("security://findings?severity=critical")
+    # Get all findings
+    findings = await client.read_resource("security://findings")
+    data = json.loads(findings.text)
 
-    # Get findings from semgrep
-    semgrep = await client.read_resource("security://findings?scanner=semgrep")
+    # Filter by severity (critical)
+    critical = [f for f in data if f["severity"] == "critical"]
+
+    # Filter by scanner (semgrep)
+    semgrep = [f for f in data if f["scanner"] == "semgrep"]
 
     # Limit results
-    top10 = await client.read_resource("security://findings?limit=10")
+    top10 = data[:10]
 ```
 
 ---
