@@ -214,6 +214,7 @@ class TestEdgeCases:
             try:
                 restricted.chmod(0o755)
             except Exception:
+                # Ignore errors during cleanup; permissions may not be restorable on some systems.
                 pass
 
 
