@@ -1,4 +1,4 @@
-# Dev Setup Infrastructure Deliverables Summary
+# dev-setup Infrastructure Deliverables Summary
 
 ## Executive Summary
 
@@ -43,7 +43,7 @@ Complete platform and testing infrastructure has been designed and implemented t
 ✓ No non-symlink .md files in .claude/commands/
 ✓ All symlinks resolve correctly
 ✓ Speckit commands are symlinks
-✓ Dev Setup command executes successfully
+✓ dev-setup command executes successfully
 ✓ Test suite passes
 ```
 
@@ -70,7 +70,7 @@ Complete platform and testing infrastructure has been designed and implemented t
 
 #### test_dev-setup_validation.py
 
-**TestDev SetupValidation** (Core validation tests):
+**TestDevSetupValidation** (Core validation tests):
 - `test_claude_commands_are_symlinks_only` - Ensures no regular files
 - `test_all_symlinks_resolve` - Checks for broken symlinks
 - `test_jpspec_symlinks_exist` - Verifies jpspec directory
@@ -88,13 +88,13 @@ Complete platform and testing infrastructure has been designed and implemented t
 
 #### test_dev-setup_init_equivalence.py
 
-**TestDev SetupInitEquivalence** (Equivalence tests):
+**TestDevSetupInitEquivalence** (Equivalence tests):
 - `test_same_speckit_commands_available` - Same commands in both
 - `test_speckit_command_content_matches` - Identical content
 - `test_jpspec_commands_exist_in_templates` - Future state verification
 - `test_naming_convention_consistency` - Naming standards
 
-**TestDev SetupIdempotency** (Safety tests):
+**TestDevSetupIdempotency** (Safety tests):
 - `test_dev-setup_can_run_multiple_times` - Idempotent operation
 
 **TestCommandDiscoverability** (Quality tests):
@@ -147,7 +147,7 @@ To fix:
 - repo: local
   hooks:
     - id: dev-setup-validation
-      name: Dev Setup Consistency Check
+      name: dev-setup Consistency Check
       entry: ./scripts/bash/pre-commit-dev-setup.sh
       language: system
       files: ^(\.claude/commands/.*\.md|templates/commands/.*\.md)$
@@ -178,7 +178,7 @@ make format           # Format code
 make clean            # Clean build artifacts
 ```
 
-#### Dev Setup Management
+#### dev-setup Management
 ```bash
 make dev-setup-validate # Validate dev-setup setup
 make dev-setup-fix      # Fix dev-setup setup (recreate symlinks)
@@ -207,7 +207,7 @@ make ci-local         # Run local CI simulation
 ```bash
 $ make dev-setup-status
 ==========================================
-Dev Setup Status
+dev-setup Status
 ==========================================
 
 === .claude/commands/ structure ===
@@ -491,7 +491,7 @@ All tasks created with proper acceptance criteria, descriptions, labels, and pri
 ### Proposed Addition to memory/constitution.md
 
 ```markdown
-## Dev Setup Consistency Requirements (NON-NEGOTIABLE)
+## dev-setup Consistency Requirements (NON-NEGOTIABLE)
 
 ### Single Source of Truth
 All command content MUST live in `templates/commands/`:

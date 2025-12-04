@@ -1,4 +1,4 @@
-# Dev Setup Platform Principles
+# dev-setup Platform Principles
 
 ## For /speckit.constitution Integration
 
@@ -6,7 +6,7 @@ This document contains operational standards and platform principles for the dev
 
 ---
 
-## Dev Setup Consistency Requirements (NON-NEGOTIABLE)
+## dev-setup Consistency Requirements (NON-NEGOTIABLE)
 
 ### Single Source of Truth
 
@@ -128,7 +128,7 @@ Automated recovery reduces operational load:
 All PRs must pass:
 - [ ] No non-symlink .md files in `.claude/commands/`
 - [ ] All symlinks resolve to existing templates
-- [ ] Dev Setup command executes successfully
+- [ ] dev-setup command executes successfully
 - [ ] Test suite passes (test_dev-setup_*.py)
 - [ ] No broken symlinks
 - [ ] Template coverage is complete
@@ -268,7 +268,7 @@ For projects adopting this architecture:
 - **Content drift incidents**: 0 per quarter
 - **Broken symlinks in main**: 0
 - **Non-symlink files in main**: 0
-- **Dev Setup-init equivalence**: 100%
+- **dev-setup-init equivalence**: 100%
 
 ### Developer Experience
 - **Time to understand workflow**: < 30 minutes
@@ -280,7 +280,7 @@ For projects adopting this architecture:
 
 ## References
 
-- [Dev Setup Consistency Guide](/docs/reference/dev-setup-consistency.md)
+- [dev-setup Consistency Guide](/docs/reference/dev-setup-consistency.md)
 - [Operational Runbook](/docs/runbooks/dev-setup-recovery.md)
 - [CI/CD Workflow](/.github/workflows/dev-setup-validation.yml)
 - [Test Suite](/tests/test_dev-setup_validation.py)

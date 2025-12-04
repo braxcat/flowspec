@@ -1,4 +1,4 @@
-# Dev Setup Recovery Runbook
+# dev-setup Recovery Runbook
 
 ## Overview
 
@@ -208,7 +208,7 @@ git commit -s -m "fix: restore dev-setup consistency"
 
 ### Symptoms
 
-GitHub Actions workflow "Dev Setup Validation" fails with validation errors.
+GitHub Actions workflow "dev-setup Validation" fails with validation errors.
 
 ### Recovery Procedure
 
@@ -451,7 +451,7 @@ specify dev-setup --force     # Run dev-setup command directly
 
 ## Additional Resources
 
-- [Dev Setup Consistency Guide](/docs/reference/dev-setup-consistency.md)
+- [dev-setup Consistency Guide](/docs/reference/dev-setup-consistency.md)
 - [CI/CD Workflow](/.github/workflows/dev-setup-validation.yml)
 - [Test Suite](/tests/test_dev-setup_validation.py)
 - [Backlog Quick Start](/docs/guides/backlog-quickstart.md)

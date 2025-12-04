@@ -153,7 +153,7 @@ Both work with Claude Code, but they create inconsistent experiences:
 
 ### Option 3: Support Both (Dual Mode)
 
-**Description**: Dev Setup uses subdirectories, init uses flat structure, both work.
+**Description**: dev-setup uses subdirectories, init uses flat structure, both work.
 
 **Pros**:
 - ✅ No breaking changes
@@ -323,7 +323,7 @@ bash scripts/bash/migrate-commands-to-subdirs.sh
 ## Validation Criteria
 
 1. **Technical**:
-   - Dev Setup creates subdirectory structure
+   - dev-setup creates subdirectory structure
    - Init creates subdirectory structure
    - Both produce identical layouts
    - Partials (`_backlog-instructions.md`) copied/symlinked correctly

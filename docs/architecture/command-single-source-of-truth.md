@@ -1,4 +1,4 @@
-# Single Source of Truth Architecture for Dev Setup Command
+# Single Source of Truth Architecture for dev-setup Command
 
 ## Executive Summary
 
@@ -97,7 +97,7 @@
 │  └──────────────────┘       └──────────────────┘          │
 │                                                              │
 │  SOLUTION: One canonical version in templates/              │
-│  - Development uses symlinks (dev-setup)                      │
+│  - Development uses symlinks (dev-setup)                       │
 │  - Distribution copies files (specify init)                 │
 │  - Both get IDENTICAL enhanced content                      │
 └─────────────────────────────────────────────────────────────┘
@@ -240,7 +240,7 @@ jp-spec-kit/
 │      │ read (symlink)            │ read (copy)               │
 │      ↓                           ↓                           │
 │  ┌─────────────────────┐    ┌─────────────────────┐        │
-│  │ Dev Setup Command     │    │ Init Command        │        │
+│  │ dev-setup Command     │    │ Init Command        │        │
 │  │ (specify dev-setup)   │    │ (specify init)      │        │
 │  │                     │    │                     │        │
 │  │ Creates:            │    │ Creates:            │        │
@@ -433,7 +433,7 @@ Rationale:
 Implementation:
 - Place `_backlog-instructions.md` in `templates/commands/jpspec/`
 - Add reference in each command: "See `_backlog-instructions.md` for task management workflow"
-- Dev Setup creates symlink for it
+- dev-setup creates symlink for it
 - Init copies it
 
 **Consequences**:
@@ -504,7 +504,7 @@ templates/commands/
 
 ---
 
-### 4.2 Dev Setup Command (`specify dev-setup`)
+### 4.2 dev-setup Command (`specify dev-setup`)
 
 **Current State**:
 ```python
@@ -549,7 +549,7 @@ def dev-setup(force: bool = False):
         if symlink.is_symlink() and not symlink.resolve().exists():
             error(f"Broken symlink: {symlink}")
 
-    success("Dev Setup setup complete")
+    success("dev-setup setup complete")
 ```
 
 **Key Changes**:
@@ -652,7 +652,7 @@ echo "Migration complete. Commands now in subdirectories."
    - No broken symlinks
 
 3. **Content Equivalence**
-   - Dev Setup symlinks point to same files init would copy
+   - dev-setup symlinks point to same files init would copy
    - File sizes match (no divergence)
    - MD5 hashes match for critical files
 
@@ -812,7 +812,7 @@ jobs:
 
 ---
 
-### 5.3 Phase 3: Dev Setup Command Update
+### 5.3 Phase 3: dev-setup Command Update
 
 **Duration**: 1 day
 
@@ -870,8 +870,8 @@ jobs:
    ```
 
 **Success Criteria**:
-- Dev Setup creates jpspec symlinks
-- Dev Setup creates speckit symlinks
+- dev-setup creates jpspec symlinks
+- dev-setup creates speckit symlinks
 - All symlinks resolve correctly
 - Tests pass
 - Documentation updated
@@ -1057,7 +1057,7 @@ jobs:
    git commit -s -m "ci: add command structure validation
 
    Add CI checks to ensure:
-   - Dev Setup creates correct symlinks
+   - dev-setup creates correct symlinks
    - Init produces equivalent structure
    - No direct files in source .claude/commands/
 
@@ -1219,7 +1219,7 @@ The following architectural principles should be added to `/speckit.constitution
 **Checks**:
 - ✅ All files in `.claude/commands/` are symlinks (source repo)
 - ✅ All symlinks resolve to `templates/commands/`
-- ✅ Dev Setup and init produce equivalent structures
+- ✅ dev-setup and init produce equivalent structures
 - ✅ No forbidden file patterns or naming violations
 
 **Enforcement**: CI workflow fails on validation errors, blocking merge.
@@ -1251,7 +1251,7 @@ The following architectural principles should be added to `/speckit.constitution
 
 2. **Short Term** (Next week):
    - Start Phase 1: Template migration
-   - Start Phase 2: Dev Setup command update
+   - Start Phase 2: dev-setup command update
    - Begin writing tests
 
 3. **Medium Term** (Next 2 weeks):

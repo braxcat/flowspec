@@ -1,4 +1,4 @@
-# Fix Dev Setup Command Analysis
+# Fix dev-setup Command Analysis
 
 ## Executive Summary
 
@@ -13,7 +13,7 @@ The `specify dev-setup` command has significant gaps compared to what `specify i
 
 ## Chain of Thought Analysis
 
-### Step 1: Understanding the Dev Setup Command Implementation
+### Step 1: Understanding the dev-setup Command Implementation
 
 **Location**: `jp-spec-kit/src/specify_cli/__init__.py:2499-2630`
 
@@ -56,7 +56,7 @@ The `specify dev-setup` command has significant gaps compared to what `specify i
 - **Flat file structure** with dot notation (e.g., `jpspec.implement.md`)
 - All files are actual files, not symlinks
 
-#### JP-Spec-Kit Dev Setup Installation
+#### JP-Spec-Kit dev-setup Installation
 ```
 .claude/commands/
 ├── jpspec/                          ← Subdirectory structure
@@ -104,7 +104,7 @@ templates:       94f6876d82379e85ce89ab1772f3c92a  (2945 bytes)
 
 All three are different! The version jp-spec-kit uses for development (`.claude/commands/jpspec/`) is NOT what gets distributed.
 
-### Step 4: Missing Files from Dev Setup Setup
+### Step 4: Missing Files from dev-setup Setup
 
 #### Missing Command: `speckit.taskstoissues.md`
 - Present in nanofuse but not in jp-spec-kit templates
@@ -219,7 +219,7 @@ All three are different! The version jp-spec-kit uses for development (`.claude/
 
 ## Issues Found
 
-### Issue 1: Dev Setup Command is Incomplete (CRITICAL)
+### Issue 1: dev-setup Command is Incomplete (CRITICAL)
 
 **Problem**: The `specify dev-setup` command only creates symlinks for `speckit` commands, completely ignoring `jpspec` commands.
 
@@ -264,7 +264,7 @@ speckit_commands_dir.mkdir(parents=True, exist_ok=True)
 
 ### Issue 5: Naming Convention Mismatch
 
-**Problem**: Dev Setup creates `speckit/implement.md` but `specify init` creates `speckit.implement.md`.
+**Problem**: dev-setup creates `speckit/implement.md` but `specify init` creates `speckit.implement.md`.
 
 **Evidence**:
 - nanofuse: `.claude/commands/speckit.implement.md` (dot notation)
@@ -314,7 +314,7 @@ Either:
 
 Recommendation: **Option A** - The enhanced versions are clearly better.
 
-### Fix 2: Update Dev Setup Command
+### Fix 2: Update dev-setup Command
 
 Add jpspec symlink creation:
 ```python

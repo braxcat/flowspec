@@ -178,7 +178,7 @@ See `_backlog-instructions.md` for complete workflow, examples, and best practic
 - Clear semantic: "This is included/referenced elsewhere"
 
 **Distribution**:
-- Dev Setup: Creates symlink `.claude/commands/jpspec/_backlog-instructions.md → templates/commands/jpspec/_backlog-instructions.md`
+- dev-setup: Creates symlink `.claude/commands/jpspec/_backlog-instructions.md → templates/commands/jpspec/_backlog-instructions.md`
 - Init: Copies `_backlog-instructions.md` to user project
 
 **Pros**:
@@ -251,7 +251,7 @@ Quick commands:
 - Complete: `backlog task edit <id> -s Done`
 ```
 
-**Dev Setup Behavior**:
+**dev-setup Behavior**:
 ```python
 # Create symlink for partial
 symlink_path = ".claude/commands/jpspec/_backlog-instructions.md"

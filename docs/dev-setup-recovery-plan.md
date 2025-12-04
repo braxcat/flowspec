@@ -1,4 +1,4 @@
-# Dev-Setup Architecture Recovery Plan
+# dev-setup Architecture Recovery Plan
 
 **Created**: 2025-12-03
 **Status**: In Progress

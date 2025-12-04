@@ -4,7 +4,7 @@ This directory contains architectural design documents and decision records for 
 
 ## Architecture Documents
 
-### [Dev Setup Single Source of Truth Architecture](./dev-setup-single-source-of-truth.md)
+### [dev-setup Single Source of Truth Architecture](./dev-setup-single-source-of-truth.md)
 
 Comprehensive architecture document for resolving the command file divergence problem.
 
@@ -53,7 +53,7 @@ Comprehensive architecture document for resolving the command file divergence pr
 
 **Decision**: Use subdirectory structure (`jpspec/implement.md`) instead of flat structure with dots (`jpspec.implement.md`).
 
-**Context**: Dev Setup uses subdirectories, init uses flat structure, creating inconsistent experience.
+**Context**: dev-setup uses subdirectories, init uses flat structure, creating inconsistent experience.
 
 **Rationale**:
 - Better organization for 17+ commands
@@ -134,7 +134,7 @@ The following backlog tasks have been created for implementation:
 - Reorganize speckit commands to subdirectory
 - Update documentation
 
-### Phase 3: Dev Setup Command Update - 1 day
+### Phase 3: dev-setup Command Update - 1 day
 - Add jpspec symlink creation
 - Test and validate
 
@@ -175,7 +175,7 @@ Commands organized in subdirectories by namespace (`jpspec/`, `speckit/`), not f
 Distributed commands should be fully-featured (10-20KB) with comprehensive guidance, not minimal placeholders (2-3KB).
 
 ### 4. Symlink Strategy for Development
-Dev Setup creates symlinks from `.claude/commands/` to `templates/commands/` to ensure developers test distributed content.
+dev-setup creates symlinks from `.claude/commands/` to `templates/commands/` to ensure developers test distributed content.
 
 ### 5. Automated Validation of Structure
 CI validates command structure to prevent content divergence and structural errors.

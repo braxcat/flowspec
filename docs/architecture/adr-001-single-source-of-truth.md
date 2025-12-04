@@ -76,7 +76,7 @@ End users get a vastly inferior experience (3KB stub) compared to what jp-spec-k
 - ✅ No change to current development workflow
 
 **Cons**:
-- ❌ Dev Setup would need to copy instead of symlink (slower, more complex)
+- ❌ dev-setup would need to copy instead of symlink (slower, more complex)
 - ❌ Breaks existing pattern (templates should be canonical for distribution)
 - ❌ Confusing: Why are distribution templates sourced from `.claude/`?
 - ❌ Requires build-time preprocessing
@@ -87,7 +87,7 @@ End users get a vastly inferior experience (3KB stub) compared to what jp-spec-k
 
 ### Option 3: Single Source in `templates/` with Symlinks (SELECTED)
 
-**Description**: Move enhanced commands to `templates/commands/jpspec/` (the canonical source). Dev Setup creates symlinks from `.claude/commands/` to templates.
+**Description**: Move enhanced commands to `templates/commands/jpspec/` (the canonical source). dev-setup creates symlinks from `.claude/commands/` to templates.
 
 **Pros**:
 - ✅ One canonical source (templates/)

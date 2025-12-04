@@ -1,4 +1,4 @@
-# Implementation Readiness Report: Dev Setup Single Source of Truth Architecture
+# Implementation Readiness Report: dev-setup Single Source of Truth Architecture
 
 **Report Date**: 2025-12-03
 **Architect**: Senior IT Strategy Architect (Claude Code)
@@ -116,7 +116,7 @@ templates/commands/          ← SINGLE SOURCE OF TRUTH
 - Validation requirements specified
 - Content requirements documented
 
-**B. Dev Setup Command** (`specify dev-setup`)
+**B. dev-setup Command** (`specify dev-setup`)
 - Pseudocode provided
 - Both speckit and jpspec symlink creation
 - Error handling defined
@@ -148,7 +148,7 @@ templates/commands/          ← SINGLE SOURCE OF TRUTH
 |-------|----------|-------|------------|
 | 1. Preparation | 1 day | Architecture docs, tasks | Low |
 | 2. Template Migration | 2-3 days | Move files to templates | Medium |
-| 3. Dev Setup Update | 1 day | Add jpspec symlinks | Low |
+| 3. dev-setup Update | 1 day | Add jpspec symlinks | Low |
 | 4. Replace Commands | 30 min | Delete files, create symlinks | Low |
 | 5. Init Update | 2 days | Subdirectory structure, tests | Medium |
 | 6. CI Validation | 1 day | Workflow, hooks | Low |
@@ -301,7 +301,7 @@ Labels: architecture, adr
 
 ### Short Term (Next week)
 1. Begin Phase 1: Template migration
-2. Begin Phase 2: Dev Setup command update
+2. Begin Phase 2: dev-setup command update
 3. Start writing tests
 
 ### Medium Term (Next 2 weeks)
