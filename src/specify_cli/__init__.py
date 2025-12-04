@@ -5559,6 +5559,7 @@ def constitution_diff(
     console.print(
         "\n[dim]Tip: Use 'specify constitution merge' to update from template[/dim]"
     )
+    raise typer.Exit(1)  # Exit with error code when differences exist
 
 
 @constitution_app.command("merge")
