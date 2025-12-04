@@ -58,8 +58,7 @@ Use frameworks with auto-escaping. For manual HTML generation, escape all user i
 - User controls full path, not just filename
 
 ### False Positive Indicators
-- Path validation against allowlist: `if path.startswith("/uploads/")`
-- Canonicalization: `os.path.realpath()` with bounds checking
+- Path canonicalization and in-bounds check: resolve path with `os.path.realpath()` and verify it remains under the allowed base directory (e.g., `/uploads/`)
 - User input is filename only, directory is hardcoded
 
 ### Remediation
