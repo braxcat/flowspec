@@ -273,6 +273,7 @@ specify init --here --constitution heavy
   - `pyproject.toml` (Python)
   - `Cargo.toml` (Rust)
   - `go.mod` (Go)
+  - `pom.xml` (Java)
 - If `memory/constitution.md` already exists, **it is preserved** (no overwrite)
 - If missing, you're prompted to select a tier
 
