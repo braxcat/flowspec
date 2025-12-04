@@ -159,7 +159,9 @@ check_prerequisites() {
 # Arguments:
 #   $1 - task ID
 # Outputs:
-#   Task updated date in YYYY-MM-DD format (or empty if not found)
+#   Task updated date in YYYY-MM-DD format (or empty string if not found)
+# Returns:
+#   1 if task file not found, 0 otherwise
 #######################################
 get_task_updated_date() {
     local task_id="$1"
