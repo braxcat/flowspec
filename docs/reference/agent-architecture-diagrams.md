@@ -579,8 +579,8 @@ flowchart TB
 ┌───────────────────────────────────────────────────────────────────────────────┐
 │                      SDD WORKFLOW COMMANDS (/jpspec:*)                        │
 │                                                                               │
-│   assess ──► specify ──► research ──► plan ──► implement ──► validate ──► operate
-│      │          │           │          │           │            │           │   │
+│   assess ──► specify ──► research ──► plan ──► implement ──► validate ──► operate │
+│      │          │           │          │           │            │           │
 └──────┼──────────┼───────────┼──────────┼───────────┼────────────┼───────────┼───┘
        │          │           │          │           │            │           │
        ▼          ▼           ▼          ▼           ▼            ▼           ▼
