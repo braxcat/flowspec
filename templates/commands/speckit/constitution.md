@@ -435,11 +435,11 @@ Create formatted tech stack content replacing `[LANGUAGES_AND_FRAMEWORKS]`:
 - `[LINTING_TOOLS]` - List of detected linters and formatters
 - `[CI_CD_TOOLS]` - Detected CI/CD platforms
 
-**For heavy tier only**, populate:
-- <!-- NEEDS_VALIDATION: [COMPLIANCE_FRAMEWORKS] --> - Leave as NEEDS_VALIDATION placeholder (user must specify)
-- <!-- NEEDS_VALIDATION: [RETENTION_PERIOD] --> - Leave as NEEDS_VALIDATION placeholder
-- <!-- NEEDS_VALIDATION: [APPROVAL_AUTHORITY] --> - Leave as NEEDS_VALIDATION placeholder
-- <!-- NEEDS_VALIDATION: [REPORTING_WINDOW] --> - Leave as NEEDS_VALIDATION placeholder
+**For heavy tier only**, preserve these NEEDS_VALIDATION placeholders (do not replace):
+- <!-- NEEDS_VALIDATION: [COMPLIANCE_FRAMEWORKS] --> (user must specify)
+- <!-- NEEDS_VALIDATION: [RETENTION_PERIOD] -->
+- <!-- NEEDS_VALIDATION: [APPROVAL_AUTHORITY] -->
+- <!-- NEEDS_VALIDATION: [REPORTING_WINDOW] -->
 
 #### 4.4 Perform Template Replacements
 
