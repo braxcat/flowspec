@@ -437,19 +437,21 @@ async def security_dashboard(projects: list[str]):
 ### Example 3: Query Specific Vulnerability Types
 
 ```python
+import json
+
 async def find_sql_injections():
     """Find all SQL injection vulnerabilities."""
 
     async with Client("jpspec-security") as client:
         # Get all findings
-        findings = await client.read_resource("security://findings")
+        findings_response = await client.read_resource("security://findings")
+        findings = json.loads(findings_response.text)
 
         # Filter for SQL injection (CWE-89)
         sql_injections = []
         for finding in findings:
-            data = json.loads(finding.text)
-            if data.get("cwe_id") == "CWE-89":
-                sql_injections.append(data)
+            if finding.get("cwe_id") == "CWE-89":
+                sql_injections.append(finding)
 
         print(f"Found {len(sql_injections)} SQL injection vulnerabilities:")
         for vuln in sql_injections:
