@@ -55,7 +55,69 @@ tasks manually using:
 Then re-run /jpspec:implement
 ```
 
-**If tasks ARE found, proceed to Phase 0.**
+**If tasks ARE found, proceed to Step 2.**
+
+### Step 2: Discover Related Specifications and ADRs
+
+**⚠️ CRITICAL: Implementation MUST be informed by all relevant design documents.**
+
+Before coding, discover ALL related PRDs, Functional Specs, Technical Specs, and ADRs:
+
+```bash
+# Search for PRDs related to this feature
+ls -la docs/prd/ 2>/dev/null || echo "No PRDs found"
+grep -rl "$ARGUMENTS" docs/prd/ 2>/dev/null || echo "No matching PRDs"
+
+# Search for Functional and Technical Specs
+ls -la docs/specs/ 2>/dev/null || echo "No specs found"
+grep -rl "$ARGUMENTS" docs/specs/ 2>/dev/null || echo "No matching specs"
+
+# Search for related ADRs (architecture decisions)
+ls -la docs/adr/ 2>/dev/null || echo "No ADRs found"
+grep -rl "$ARGUMENTS" docs/adr/ 2>/dev/null || echo "No matching ADRs"
+
+# Search backlog task descriptions for spec/ADR references
+backlog task list --plain 2>/dev/null | grep -i "prd\|spec\|adr"
+```
+
+**Read ALL discovered documents before implementation:**
+
+The artifact progression is:
+```
+PRD → Functional Spec → Technical Spec → ADR → Implementation
+```
+
+| Document | What It Tells You |
+|----------|-------------------|
+| **PRD** | What the product must do and why the user cares |
+| **Functional Spec** | What behaviors and capabilities are required |
+| **Technical Spec** | How to build it (architecture, data, APIs) |
+| **ADR** | Why we chose this technical path |
+
+**If key documents are missing:**
+
+```
+⚠️ Missing design documents for: [FEATURE NAME]
+
+Found:
+- PRD: [✓/✗]
+- Functional Spec: [✓/✗]
+- Technical Spec: [✓/✗]
+- ADRs: [✓/✗]
+
+Recommendation:
+- Run /jpspec:specify to create PRD and Functional Spec
+- Run /jpspec:plan to create Technical Spec and ADRs
+- Then re-run /jpspec:implement
+
+Proceeding without specs may result in:
+- Misaligned implementation
+- Undefined edge cases
+- Inconsistent architecture
+- Undocumented decisions
+```
+
+**If documents ARE found, read them and proceed to Phase 0.**
 
 ### Checkpoint Reminder
 
@@ -714,14 +776,35 @@ git push origin <branch-name>
 gh pr create --title "feat: description" --body "..."
 ```
 
-### Deliverables
+### Deliverables (ALL THREE REQUIRED)
 
-- Fully implemented, reviewed code
-- Comprehensive test suites
-- Code review reports with resolution status
-- Integration documentation
-- Deployment-ready artifacts
-- **All pre-PR validation checks passing**
+Implementation is **code + documents + tests**. All three are mandatory deliverables.
+
+#### 1. Production Code
+- Fully implemented, reviewed source code
+- All acceptance criteria satisfied
+- Code review feedback addressed
+- Pre-PR validation passing (lint, format, tests)
+
+#### 2. Key Documents
+- Updated/created API documentation
+- Code comments for complex logic
+- Configuration and deployment docs
+- Any new ADRs for implementation decisions
+
+#### 3. Complete Tests
+- Unit tests for all new functions/methods
+- Integration tests for API endpoints
+- Edge case coverage (empty inputs, errors, boundaries)
+- Test coverage meeting project minimum (typically 80%)
+
+**Implementation is NOT complete until all three are delivered.**
+
+| Deliverable | Verification |
+|-------------|--------------|
+| Code | PR passes CI, code review approved |
+| Documents | API docs updated, comments added |
+| Tests | `pytest`/`go test`/`npm test` passes, coverage met |
 
 ## Post-Completion: Emit Workflow Event
 
