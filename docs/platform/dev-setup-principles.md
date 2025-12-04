@@ -33,7 +33,7 @@ Standard operating procedure for command development:
 
 1. **Edit commands in `templates/commands/`** - Never edit `.claude/commands/` directly
 2. **Run `specify dev-setup --force`** after adding new commands to create symlinks
-3. **Use `make dev-setup-validate`** to verify setup before committing
+3. **Use `make dev-validate`** to verify setup before committing
 4. **Pre-commit hooks** automatically validate on every commit
 
 **Rationale**: Clear, consistent workflow reduces mistakes and cognitive load.
@@ -42,9 +42,9 @@ Standard operating procedure for command development:
 
 When validation fails, recovery is simple and fast:
 
-- **Quick fix**: `make dev-setup-fix` recreates all symlinks correctly
-- **Status check**: `make dev-setup-status` shows current state
-- **Full validation**: `make dev-setup-validate` runs all checks
+- **Quick fix**: `make dev-fix` recreates all symlinks correctly
+- **Status check**: `make dev-status` shows current state
+- **Full validation**: `make dev-validate` runs all checks
 - **Never manually create files** in `.claude/commands/` - always use automated tools
 
 **Rationale**: Self-healing infrastructure minimizes downtime and reduces operational burden.
@@ -72,7 +72,7 @@ This architecture directly supports DORA Elite metrics:
 
 ### Mean Time to Restore (MTTR)
 - **Target**: Less than one hour
-- **Support**: `make dev-setup-fix` restores consistency in seconds
+- **Support**: `make dev-fix` restores consistency in seconds
 - **Mechanism**: Runbook provides clear recovery procedures
 
 ---
@@ -112,7 +112,7 @@ All validation provides detailed feedback:
 ### Self-Healing Systems
 
 Automated recovery reduces operational load:
-- `make dev-setup-fix` recreates correct state
+- `make dev-fix` recreates correct state
 - Idempotent operations safe to retry
 - No manual symlink management required
 - Clear escalation paths for complex issues

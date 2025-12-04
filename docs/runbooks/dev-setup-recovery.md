@@ -8,11 +8,11 @@ This runbook provides procedures for recovering from dev-setup validation failur
 
 | Scenario | Quick Fix | Details |
 |----------|-----------|---------|
-| Non-symlink files detected | `make dev-setup-fix` | [Section 1](#scenario-1-non-symlink-files-detected) |
-| Broken symlinks | `make dev-setup-fix` | [Section 2](#scenario-2-broken-symlinks) |
+| Non-symlink files detected | `make dev-fix` | [Section 1](#scenario-1-non-symlink-files-detected) |
+| Broken symlinks | `make dev-fix` | [Section 2](#scenario-2-broken-symlinks) |
 | Pre-commit hook fails | `./scripts/bash/pre-commit-dev-setup.sh` | [Section 3](#scenario-3-pre-commit-hook-failure) |
-| CI validation fails on PR | Check diff, then `make dev-setup-fix` | [Section 4](#scenario-4-ci-validation-fails) |
-| Corrupted .claude directory | `rm -rf .claude/commands && make dev-setup-fix` | [Section 5](#scenario-5-corrupted-claude-directory) |
+| CI validation fails on PR | Check diff, then `make dev-fix` | [Section 4](#scenario-4-ci-validation-fails) |
+| Corrupted .claude directory | `rm -rf .claude/commands && make dev-fix` | [Section 5](#scenario-5-corrupted-claude-directory) |
 
 ---
 
@@ -37,10 +37,10 @@ Files were edited directly in `.claude/commands/` instead of through `templates/
 
 ```bash
 # Recreate all symlinks from templates
-make dev-setup-fix
+make dev-fix
 
 # Verify
-make dev-setup-validate
+make dev-validate
 ```
 
 **Use when**: Changes in .claude/commands/ were accidental or can be discarded.
@@ -60,7 +60,7 @@ diff .claude/commands/jpspec/implement.md templates/commands/jpspec/implement.md
 vim templates/commands/jpspec/implement.md
 
 # 4. Recreate symlinks
-make dev-setup-fix
+make dev-fix
 
 # 5. Verify changes are present
 cat .claude/commands/jpspec/implement.md
@@ -119,7 +119,7 @@ find .claude/commands -type l ! -exec test -e {} \; -print
 git checkout main -- templates/commands/analyze.md
 
 # Recreate symlinks
-make dev-setup-fix
+make dev-fix
 ```
 
 **If templates were intentionally removed:**
@@ -129,23 +129,23 @@ make dev-setup-fix
 rm .claude/commands/speckit/old-command.md
 
 # Verify
-make dev-setup-validate
+make dev-validate
 ```
 
 #### Step 3: Verify
 
 ```bash
 # Check all symlinks resolve
-make dev-setup-status
+make dev-status
 
 # Run full validation
-make dev-setup-validate
+make dev-validate
 ```
 
 ### Prevention
 
 - Don't delete templates without removing symlinks
-- Run `make dev-setup-fix` after major branch merges
+- Run `make dev-fix` after major branch merges
 - Use `git mv` when renaming templates
 
 ---
@@ -189,7 +189,7 @@ git commit -s -m "fix: resolve dev-setup issues"
 git commit --no-verify -s -m "emergency fix"
 
 # Immediately fix in next commit
-make dev-setup-fix
+make dev-fix
 git add .claude/commands/
 git commit -s -m "fix: restore dev-setup consistency"
 ```
@@ -198,7 +198,7 @@ git commit -s -m "fix: restore dev-setup consistency"
 
 ### Prevention
 
-- Run `make dev-setup-validate` before committing
+- Run `make dev-validate` before committing
 - Install pre-commit hooks: `pre-commit install`
 - Test changes locally first
 
@@ -232,15 +232,15 @@ git fetch origin
 git checkout pr-branch-name
 
 # Run same checks as CI
-make dev-setup-validate
-make test-dev-setup
+make dev-validate
+make test-dev
 ```
 
 #### Step 3: Fix Issues
 
 ```bash
 # Fix identified issues
-make dev-setup-fix
+make dev-fix
 
 # Verify locally
 make ci-local  # Simulates full CI run
@@ -289,20 +289,20 @@ cp -r .claude /tmp/claude-backup-$(date +%s)
 rm -rf .claude/commands
 
 # Recreate from scratch
-make dev-setup-fix
+make dev-fix
 ```
 
 #### Step 3: Verify Integrity
 
 ```bash
 # Check structure
-make dev-setup-status
+make dev-status
 
 # Run full validation
-make dev-setup-validate
+make dev-validate
 
 # Run tests
-make test-dev-setup
+make test-dev
 ```
 
 #### Step 4: Review Changes
@@ -319,8 +319,8 @@ git commit -s -m "fix: restore .claude/commands structure"
 ### Prevention
 
 - Don't manually manipulate `.claude/commands/` structure
-- Use `make dev-setup-fix` for all symlink recreation
-- Regular validation: `make dev-setup-validate`
+- Use `make dev-fix` for all symlink recreation
+- Regular validation: `make dev-validate`
 
 ---
 
@@ -330,8 +330,8 @@ git commit -s -m "fix: restore .claude/commands structure"
 
 Try automated recovery:
 ```bash
-make dev-setup-fix
-make dev-setup-validate
+make dev-fix
+make dev-validate
 ```
 
 ### Level 2: Manual Recovery (15 minutes)
@@ -345,7 +345,7 @@ make dev-setup-validate
 If automated recovery fails:
 1. Create GitHub issue with:
    - Error messages
-   - `make dev-setup-status` output
+   - `make dev-status` output
    - Recent commits affecting templates/
 2. Tag: `@platform-team`
 3. Include reproduction steps
@@ -431,16 +431,16 @@ After resolving issues:
 
 ```bash
 # Status and validation
-make dev-setup-status          # Show current state
-make dev-setup-validate        # Run all checks
+make dev-status          # Show current state
+make dev-validate        # Run all checks
 ./scripts/bash/pre-commit-dev-setup.sh  # Manual pre-commit check
 
 # Recovery
-make dev-setup-fix            # Recreate all symlinks
-rm -rf .claude/commands && make dev-setup-fix  # Nuclear reset
+make dev-fix            # Recreate all symlinks
+rm -rf .claude/commands && make dev-fix  # Nuclear reset
 
 # Testing
-make test-dev-setup           # Run dev-setup tests only
+make test-dev           # Run dev-setup tests only
 make ci-local               # Simulate full CI pipeline
 
 # Development
@@ -451,10 +451,10 @@ specify dev-setup --force     # Run dev-setup command directly
 
 ## Additional Resources
 
-- [dev-setup Consistency Guide](/docs/reference/dev-setup-consistency.md)
-- [CI/CD Workflow](/.github/workflows/dev-setup-validation.yml)
-- [Test Suite](/tests/test_dev-setup_validation.py)
-- [Backlog Quick Start](/docs/guides/backlog-quickstart.md)
+- [dev-setup Consistency Guide](/docs/reference/dev-setup-consistency.md) ✅
+- [CI/CD Workflow](/.github/workflows/dev-setup-validation.yml) ⏳ (Planned - Phase 3)
+- [Test Suite](/tests/test_dev-setup_validation.py) ⏳ (Planned - Phase 1)
+- [Backlog Quick Start](/docs/guides/backlog-quickstart.md) ✅
 
 ---
 

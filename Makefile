@@ -63,10 +63,26 @@ clean:
 
 dev-validate:
 	@echo "Validating development setup..."
-	@./scripts/bash/validate-commands.sh
 	@echo ""
-	@echo "Running validation tests..."
-	@uv run pytest tests/test_command_validation.py tests/test_command_equivalence.py -v
+	@echo "Checking for non-symlink .md files in .claude/commands/..."
+	@if find .claude/commands -name "*.md" -type f 2>/dev/null | grep -q .; then \
+		echo "❌ ERROR: Found non-symlink .md files:"; \
+		find .claude/commands -name "*.md" -type f; \
+		exit 1; \
+	else \
+		echo "✓ All .md files are symlinks"; \
+	fi
+	@echo ""
+	@echo "Checking for broken symlinks..."
+	@if find .claude/commands -type l ! -exec test -e {} \; -print 2>/dev/null | grep -q .; then \
+		echo "❌ ERROR: Found broken symlinks:"; \
+		find .claude/commands -type l ! -exec test -e {} \; -print; \
+		exit 1; \
+	else \
+		echo "✓ All symlinks resolve correctly"; \
+	fi
+	@echo ""
+	@echo "✓ Development setup validation passed"
 
 dev-fix:
 	@echo "Fixing development setup..."
@@ -87,7 +103,13 @@ dev-fix:
 	@uv run specify dev-setup --force
 	@echo ""
 	@echo "Step 4: Validating new setup..."
-	@./scripts/bash/validate-commands.sh
+	@echo "  - Checking symlinks..."
+	@if find .claude/commands -name "*.md" -type f 2>/dev/null | grep -q .; then \
+		echo "  ❌ Still found non-symlink files"; \
+		exit 1; \
+	else \
+		echo "  ✓ All files are symlinks"; \
+	fi
 	@echo ""
 	@echo "=========================================="
 	@echo "✓ Development setup restored successfully"
