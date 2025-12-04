@@ -168,7 +168,12 @@ get_task_updated_date() {
     # Try to find the task file (could be in tasks/ or directly in backlog/)
     if [[ -d "${PROJECT_ROOT}/${BACKLOG_DIR}/tasks" ]]; then
         # Look in tasks directory first
-        task_file=$(find "${PROJECT_ROOT}/${BACKLOG_DIR}/tasks" -name "${task_id} - *.md" -type f | head -1)
+        # Find files matching "${task_id} - *.md" and filter for exact match
+        task_file=$(find "${PROJECT_ROOT}/${BACKLOG_DIR}/tasks" -type f -name "${task_id} - *.md" | \
+            awk -F/ -v id="$task_id" '{
+                fname = $NF;
+                if (fname ~ ("^" id " - .+\\.md$")) print $0;
+            }' | head -1)
     fi
 
     # Fallback to backlog root if not found
