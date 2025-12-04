@@ -114,6 +114,8 @@ Trigger a security scan on the target directory.
     "low": 17,
     "info": 0
   },
+  "should_fail": true,
+  "fail_on": ["critical", "high"],
   "findings_file": "docs/security/scan-results.json",
   "metadata": {
     "scanners_used": ["semgrep"],
@@ -121,6 +123,17 @@ Trigger a security scan on the target directory.
   }
 }
 ```
+
+**Response Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `findings_count` | integer | Total number of findings |
+| `by_severity` | object | Count of findings by severity level |
+| `should_fail` | boolean | True if findings match any `fail_on` severity |
+| `fail_on` | list[string] | Severity levels that trigger failure |
+| `findings_file` | string | Path to findings JSON file |
+| `metadata` | object | Scan metadata (scanners used, target) |
 
 **Example:**
 

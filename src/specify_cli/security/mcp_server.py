@@ -132,9 +132,14 @@ if MCP_AVAILABLE:
             "info": sum(1 for f in findings if f.severity == Severity.INFO),
         }
 
+        # Determine if scan should fail based on fail_on severities
+        should_fail = any(by_severity.get(sev, 0) > 0 for sev in fail_on)
+
         return {
             "findings_count": len(findings),
             "by_severity": by_severity,
+            "should_fail": should_fail,
+            "fail_on": fail_on,
             "findings_file": str(findings_file.relative_to(PROJECT_ROOT)),
             "metadata": {
                 "scanners_used": scanners,

@@ -160,6 +160,50 @@ class TestSecurityScanTool:
 
         assert result["metadata"]["scanners_used"] == ["semgrep", "trivy"]
 
+    @pytest.mark.asyncio
+    async def test_security_scan_includes_fail_on_result(self, mock_orchestrator):
+        """Test that scan includes should_fail and fail_on in result."""
+        result = await mcp_server.security_scan(target=".", fail_on=["high", "critical"])
+
+        # Verify fail_on fields are included
+        assert "should_fail" in result
+        assert "fail_on" in result
+        assert result["fail_on"] == ["high", "critical"]
+
+        # Since mock returns HIGH severity finding, should_fail should be True
+        assert result["should_fail"] is True
+
+    @pytest.mark.asyncio
+    async def test_security_scan_should_fail_false_when_no_matching_severity(
+        self, mock_orchestrator
+    ):
+        """Test that should_fail is False when no findings match fail_on severities."""
+        # Reconfigure mock to return only LOW severity findings
+        mock_orchestrator.scan.return_value = [
+            Finding(
+                id="SEMGREP-003",
+                scanner="semgrep",
+                severity=Severity.LOW,
+                title="Minor Issue",
+                description="A low priority issue",
+                location=Location(
+                    file=Path("app.py"),
+                    line_start=10,
+                    line_end=10,
+                    code_snippet="x = 1",
+                ),
+                cwe_id="CWE-000",
+                confidence=Confidence.LOW,
+            )
+        ]
+
+        result = await mcp_server.security_scan(
+            target=".", fail_on=["high", "critical"]
+        )
+
+        # With only LOW severity finding, should_fail should be False
+        assert result["should_fail"] is False
+
 
 class TestSecurityTriageTool:
     """Tests for security_triage tool."""
