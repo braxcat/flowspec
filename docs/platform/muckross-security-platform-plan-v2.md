@@ -35,9 +35,36 @@ This is the single most important architectural constraint. Any implementation t
 
 ---
 
-## 1. Architecture Overview
+## 1. Workflow Independence
 
-### 1.1 Component Roles
+**The Muckross Security Platform is NOT part of the core JP Spec workflow.**
+
+This security scanning capability is an **optional, standalone feature** that can be used independently of the standard `/jpspec:specify → /jpspec:plan → /jpspec:implement` workflow.
+
+**Key Points:**
+- **No workflow state requirements**: Can be run at any time, in any project state
+- **No dependency on /jpspec commands**: Works standalone without spec-driven workflow
+- **Optional for developers**: Security scanning is a supplementary capability
+- **CI/CD independence**: Can run in pipelines without jpspec context
+- **Security engineer focused**: Designed for security practitioners, not feature development
+
+**When to use:**
+- Pre-commit scanning before any feature work
+- CI/CD security gates (independent of feature branches)
+- Ad-hoc security audits
+- Security engineer triage and remediation
+- Compliance scanning
+
+**NOT required for:**
+- Standard feature development workflow
+- `/jpspec:implement` task execution
+- Product requirement implementation
+
+---
+
+## 2. Architecture Overview
+
+### 2.1 Component Roles
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -114,9 +141,196 @@ This is the single most important architectural constraint. Any implementation t
 
 ---
 
-## 2. MCP Server Design (CORRECTED)
+## 3. Command Execution Context
 
-### 2.1 MCP Server Implementation
+**Two types of slash commands exist in JP Spec Kit:**
+
+### 3.1 CLI Commands (Deterministic)
+
+| Aspect | Details |
+|--------|---------|
+| **Location** | `src/specify_cli/commands/` |
+| **Execution** | Python code, no LLM |
+| **Purpose** | Automation, CI/CD, scripting |
+| **Example** | `specify security scan` |
+| **Use in** | GitHub Actions, pre-commit hooks, Docker |
+
+**Characteristics:**
+- Runs scanner tools (Semgrep, CodeQL, etc.)
+- Pure Python subprocess orchestration
+- Deterministic, reproducible results
+- No AI/LLM dependencies
+- Safe for CI/CD pipelines
+
+### 3.2 Agentic Commands (LLM-Powered)
+
+| Aspect | Details |
+|--------|---------|
+| **Location** | `.claude/commands/` |
+| **Execution** | AI coding tool (Claude Code, Cursor) |
+| **Purpose** | Intelligent triage, fix generation |
+| **Example** | `/jpspec:security_triage` |
+| **Use in** | Local development with AI tools |
+
+**Characteristics:**
+- Executes skills from `.claude/skills/`
+- Uses AI coding tool's LLM access
+- Context-aware analysis
+- Code generation and patching
+- **NEVER in CI/CD**
+
+### 3.3 Command Naming Convention
+
+**All security commands use underscores (matching jpspec pattern):**
+
+| Command | Type | Purpose |
+|---------|------|---------|
+| `specify security scan` | CLI | Run security scanners |
+| `/jpspec:security_scan` | Agentic | Invoke scan with context |
+| `/jpspec:security_triage` | Agentic | AI-powered triage |
+| `/jpspec:security_fix` | Agentic | Generate security fixes |
+| `/jpspec:security_report` | Agentic | Generate security reports |
+
+**Rationale**: Underscores match the `/jpspec:*` command pattern and are more shell-friendly than hyphens.
+
+### 3.4 CI/CD Pipeline Uses CLI Commands ONLY
+
+**Critical constraint**: CI/CD pipelines MUST use CLI commands, NEVER agentic commands.
+
+**Why:**
+- No LLM access in CI/CD runners
+- Deterministic, reproducible results required
+- No API keys or secrets needed
+- Fast execution (no AI inference delay)
+- Compliance and audit requirements
+
+**Example:**
+```yaml
+# GitHub Actions - CORRECT
+- name: Run Security Scan
+  run: specify security scan --fail-on critical,high
+
+# GitHub Actions - WRONG (would fail)
+- name: Run Security Triage
+  run: /jpspec:security_triage  # ERROR: No AI tool in CI/CD
+```
+
+---
+
+## 4. Security Memory Integration
+
+**The Muckross Security Platform uses a centralized security knowledge base:**
+
+### 4.1 Memory Directory Structure
+
+```
+memory/security/
+├── security-facts.md        # Key security facts, thresholds, policies
+├── cwe-knowledge.md         # CWE categories and remediation patterns
+├── scanner-config.md        # Scanner defaults and customizations
+├── triage-guidelines.md     # Classification rules and examples
+└── compliance-mapping.md    # OWASP, CWE, NIST mappings
+```
+
+### 4.2 How Skills and Commands Use Memory
+
+**Skills import memory files:**
+```markdown
+# .claude/skills/security-triage.md
+
+@import memory/security/security-facts.md
+@import memory/security/triage-guidelines.md
+@import memory/security/cwe-knowledge.md
+
+# Security Triage Skill
+
+You are a security expert performing triage...
+```
+
+**Commands reference memory:**
+```markdown
+# .claude/commands/jpspec-security_triage.md
+
+This command invokes the security-triage skill which references:
+- Security facts and thresholds
+- CWE vulnerability knowledge
+- Triage classification guidelines
+```
+
+### 4.3 MCP Server Memory Integration
+
+**The MCP server exposes memory as resources:**
+
+```python
+@server.resource("security://knowledge/cwe")
+async def get_cwe_knowledge() -> Resource:
+    """Expose CWE knowledge base for AI tools."""
+    cwe_file = Path("memory/security/cwe-knowledge.md")
+    return Resource(
+        uri="security://knowledge/cwe",
+        name="CWE Knowledge Base",
+        mimeType="text/markdown",
+        text=cwe_file.read_text(),
+    )
+
+@server.resource("security://knowledge/triage-guidelines")
+async def get_triage_guidelines() -> Resource:
+    """Expose triage guidelines for AI tools."""
+    triage_file = Path("memory/security/triage-guidelines.md")
+    return Resource(
+        uri="security://knowledge/triage-guidelines",
+        name="Triage Guidelines",
+        mimeType="text/markdown",
+        text=triage_file.read_text(),
+    )
+```
+
+**AI tools can read these resources directly:**
+- `security://knowledge/cwe` - CWE vulnerability patterns
+- `security://knowledge/triage-guidelines` - Classification rules
+- `security://knowledge/security-facts` - Key thresholds and policies
+- `security://knowledge/scanner-config` - Scanner configurations
+- `security://knowledge/compliance-mapping` - OWASP/NIST mappings
+
+### 4.4 Memory File Maintenance
+
+**Security memory files should contain:**
+
+**security-facts.md**:
+- Severity thresholds (critical, high, medium, low)
+- False positive rate expectations
+- Scanner performance benchmarks
+- Known scanner limitations
+
+**cwe-knowledge.md**:
+- CWE category descriptions
+- Remediation patterns by CWE
+- Common exploit scenarios
+- Language-specific mitigations
+
+**scanner-config.md**:
+- Default scanner configurations
+- Custom rule paths
+- Exclusion patterns
+- Scanner-specific settings
+
+**triage-guidelines.md**:
+- Classification criteria (true positive, false positive, needs investigation)
+- Risk scoring formulas
+- Context analysis examples
+- Edge case handling
+
+**compliance-mapping.md**:
+- OWASP Top 10 mappings
+- CWE to CVE mappings
+- NIST controls
+- Industry standard references
+
+---
+
+## 5. MCP Server Design (CORRECTED)
+
+### 5.1 MCP Server Implementation
 
 ```python
 # src/specify_cli/security/mcp_server.py
@@ -137,6 +351,7 @@ class SecurityScannerMCPServer:
         self.server = Server("security-scanner")
         self._register_tools()
         self._register_resources()
+        self._register_memory_resources()
 
     def _register_tools(self) -> None:
         """Register security scanning tools."""
@@ -178,12 +393,22 @@ class SecurityScannerMCPServer:
 
             DOES NOT CALL LLM API.
             Returns skill invocation instruction for AI tool to execute.
+
+            The skill imports memory files:
+            - memory/security/security-facts.md
+            - memory/security/triage-guidelines.md
+            - memory/security/cwe-knowledge.md
             """
             return {
                 "action": "invoke_skill",
                 "skill": ".claude/skills/security-triage.md",
                 "input_file": "docs/security/findings.json",
                 "output_file": "docs/security/triage-results.json",
+                "memory_imports": [
+                    "memory/security/security-facts.md",
+                    "memory/security/triage-guidelines.md",
+                    "memory/security/cwe-knowledge.md"
+                ],
                 "description": "AI coding tool should execute security-triage skill using its own LLM access"
             }
 
@@ -195,6 +420,10 @@ class SecurityScannerMCPServer:
 
             DOES NOT CALL LLM API.
             Returns skill invocation instruction for AI tool to execute.
+
+            The skill imports memory files:
+            - memory/security/cwe-knowledge.md
+            - memory/security/security-facts.md
             """
             # Load triage results to get true positives
             triage_file = Path("docs/security/triage-results.json")
@@ -212,6 +441,10 @@ class SecurityScannerMCPServer:
                 "skill": ".claude/skills/security-fix.md",
                 "findings": true_positives if not finding_ids else [
                     f for f in true_positives if f["id"] in finding_ids
+                ],
+                "memory_imports": [
+                    "memory/security/cwe-knowledge.md",
+                    "memory/security/security-facts.md"
                 ],
                 "description": "AI coding tool should execute security-fix skill to generate patches"
             }
@@ -264,17 +497,57 @@ class SecurityScannerMCPServer:
                 text=json.dumps(status, indent=2),
             )
 
+    def _register_memory_resources(self) -> None:
+        """Register security memory/knowledge resources."""
+
+        @self.server.resource("security://knowledge/cwe")
+        async def get_cwe_knowledge() -> Resource:
+            """Expose CWE knowledge base."""
+            cwe_file = Path("memory/security/cwe-knowledge.md")
+            return Resource(
+                uri="security://knowledge/cwe",
+                name="CWE Knowledge Base",
+                mimeType="text/markdown",
+                text=cwe_file.read_text() if cwe_file.exists() else "",
+            )
+
+        @self.server.resource("security://knowledge/triage-guidelines")
+        async def get_triage_guidelines() -> Resource:
+            """Expose triage guidelines."""
+            triage_file = Path("memory/security/triage-guidelines.md")
+            return Resource(
+                uri="security://knowledge/triage-guidelines",
+                name="Triage Guidelines",
+                mimeType="text/markdown",
+                text=triage_file.read_text() if triage_file.exists() else "",
+            )
+
+        @self.server.resource("security://knowledge/security-facts")
+        async def get_security_facts() -> Resource:
+            """Expose security facts and thresholds."""
+            facts_file = Path("memory/security/security-facts.md")
+            return Resource(
+                uri="security://knowledge/security-facts",
+                name="Security Facts",
+                mimeType="text/markdown",
+                text=facts_file.read_text() if facts_file.exists() else "",
+            )
+
     def run(self) -> None:
         """Start MCP server on stdio."""
         self.server.run()
 ```
 
-### 2.2 Skill Templates
+### 5.2 Skill Templates
 
 Skills are executed by native AI tools, not by the MCP server:
 
 ```markdown
 # .claude/skills/security-triage.md
+
+@import memory/security/security-facts.md
+@import memory/security/triage-guidelines.md
+@import memory/security/cwe-knowledge.md
 
 # Security Triage Skill
 
@@ -283,6 +556,13 @@ You are a security expert performing triage on security findings.
 ## Input
 
 Read the findings from: `docs/security/findings.json`
+
+## Context
+
+Use the imported memory files for:
+- Severity thresholds and policies (security-facts.md)
+- Classification criteria and examples (triage-guidelines.md)
+- CWE vulnerability patterns and remediation (cwe-knowledge.md)
 
 ## Task
 
@@ -322,6 +602,9 @@ Justification: Direct string interpolation of user input into SQL query. Classic
 ```markdown
 # .claude/skills/security-fix.md
 
+@import memory/security/cwe-knowledge.md
+@import memory/security/security-facts.md
+
 # Security Fix Generation Skill
 
 You are a security expert generating code fixes for vulnerabilities.
@@ -329,6 +612,12 @@ You are a security expert generating code fixes for vulnerabilities.
 ## Input
 
 Read the triage results from: `docs/security/triage-results.json`
+
+## Context
+
+Use the imported memory files for:
+- CWE-specific remediation patterns (cwe-knowledge.md)
+- Security best practices and policies (security-facts.md)
 
 ## Task
 
@@ -362,14 +651,18 @@ Explanation: Use parameterized queries to prevent SQL injection.
 
 ---
 
-## 3. CI/CD Pipeline Design (CORRECTED)
+## 6. CI/CD Pipeline Design (CORRECTED)
 
-### 3.1 What Runs in CI/CD
+### 6.1 What Runs in CI/CD
+
+**CRITICAL: CI/CD pipelines use CLI commands ONLY, never agentic commands.**
 
 **GitHub Actions workflow runs:**
-1. `specify security scan` - Python runs Semgrep
+1. `specify security scan` - CLI command (Python runs Semgrep, deterministic)
 2. Upload SARIF to GitHub Security tab
 3. **NO AI triage** (that happens locally with AI coding tool)
+4. **NO LLM API calls** (no AI dependencies in pipeline)
+5. **NO API keys or secrets** (pure scanner automation)
 
 ```yaml
 # .github/workflows/security-scan.yml
@@ -401,6 +694,7 @@ jobs:
 
       - name: Run Security Scan
         run: |
+          # CLI command: deterministic, no LLM, safe for CI/CD
           # ONLY run scanner. NO AI triage.
           specify security scan \
             --format sarif \
@@ -421,32 +715,42 @@ jobs:
           path: docs/security/findings.json
 ```
 
-**What's missing**: NO AI triage, NO API calls, NO secret management.
+**What's included**: CLI scanner commands only (deterministic, reproducible).
 
-**Why**: AI triage happens locally when developer runs AI coding tool with MCP.
+**What's missing**: NO AI triage, NO agentic commands, NO API calls, NO secret management.
 
-### 3.2 Local Workflow with AI Tool
+**Why**:
+- AI triage happens locally when developer uses AI coding tool with MCP
+- CI/CD requires deterministic, reproducible results
+- No LLM access in CI/CD runners
+- Compliance and audit requirements prohibit AI in pipeline
+
+### 6.2 Local Workflow with AI Tool
+
+**Developer uses agentic commands (LLM-powered) for triage and fixes:**
 
 ```bash
-# 1. Developer runs scan (automated in CI, or manually)
+# 1. Developer runs scan (CLI command - deterministic)
 $ specify security scan
 
-# 2. Developer asks AI tool to triage (using native AI tool)
+# 2. Developer asks AI tool to triage (agentic command - LLM-powered)
 $ # In Claude Code:
-# User: "Triage the security findings"
+# User: "/jpspec:security_triage"
 # → Claude Code reads security://findings via MCP
 # → Claude Code invokes security_triage tool via MCP
 # → MCP server returns skill invocation instruction
 # → Claude Code executes .claude/skills/security-triage.md
+#   (which imports memory/security/*.md files)
 # → Claude Code writes docs/security/triage-results.json
 
-# 3. Developer asks AI tool to generate fixes
+# 3. Developer asks AI tool to generate fixes (agentic command - LLM-powered)
 $ # In Claude Code:
-# User: "Generate fixes for true positive findings"
+# User: "/jpspec:security_fix"
 # → Claude Code reads triage results
 # → Claude Code invokes security_fix tool via MCP
 # → MCP server returns skill invocation instruction
 # → Claude Code executes .claude/skills/security-fix.md
+#   (which imports memory/security/*.md files)
 # → Claude Code writes patches to docs/security/patches/
 
 # 4. Developer reviews and applies patches
@@ -454,11 +758,15 @@ $ git apply docs/security/patches/*.patch
 $ git commit -m "fix: apply security patches"
 ```
 
+**Key distinction:**
+- **CLI commands** (`specify security scan`): Deterministic, safe for CI/CD
+- **Agentic commands** (`/jpspec:security_triage`): LLM-powered, local development only
+
 ---
 
-## 4. Docker Image Design (CORRECTED)
+## 7. Docker Image Design (CORRECTED)
 
-### 4.1 What's Included
+### 7.1 What's Included
 
 ```dockerfile
 # docker/security-scanner.Dockerfile
@@ -497,9 +805,9 @@ CMD ["--help"]
 
 ---
 
-## 5. Testing Strategy (CORRECTED)
+## 8. Testing Strategy (CORRECTED)
 
-### 5.1 What to Test
+### 8.1 What to Test
 
 **Python Component Tests (pytest):**
 - Scanner execution (Semgrep subprocess)
@@ -512,13 +820,13 @@ CMD ["--help"]
 - Manually validate skills produce correct results
 - Document skill behavior and edge cases
 
-### 5.2 What NOT to Test
+### 8.2 What NOT to Test
 
 ❌ AI inference quality (that's the AI tool's job)
 ❌ LLM API reliability (no API calls)
 ❌ Prompt engineering effectiveness (test manually with fixtures)
 
-### 5.3 Test Implementation
+### 8.3 Test Implementation
 
 ```python
 # tests/security/test_mcp_server.py
@@ -586,9 +894,9 @@ Manual validation: Run skill, compare output to fixture, adjust skill if needed.
 
 ---
 
-## 6. Observability Strategy (CORRECTED)
+## 9. Observability Strategy (CORRECTED)
 
-### 6.1 What to Measure
+### 9.1 What to Measure
 
 **Python component metrics:**
 - Scan duration (time to run Semgrep)
@@ -601,7 +909,7 @@ Manual validation: Run skill, compare output to fixture, adjust skill if needed.
 - ❌ "Prompt token usage" (no API calls)
 - ❌ "Model accuracy" (test with fixtures)
 
-### 6.2 Metrics Implementation
+### 9.2 Metrics Implementation
 
 ```python
 # src/specify_cli/security/metrics.py
@@ -635,18 +943,19 @@ MCP_TOOL_INVOCATIONS.labels(tool_name='security_triage').inc()
 
 ---
 
-## 7. Task Implementation Plans (CORRECTED)
+## 10. Task Implementation Plans (CORRECTED)
 
-### 7.1 Task 224: Design and Implement Security Scanner MCP Server
+### 10.1 Task 224: Design and Implement Security Scanner MCP Server
 
 **Implementation Plan:**
 
 1. **MCP Server Skeleton** (Python subprocess orchestration)
-   - Implement `security_scan` tool (runs Semgrep via subprocess)
-   - Implement `security_triage` tool (returns skill invocation instruction)
-   - Implement `security_fix` tool (returns skill invocation instruction)
+   - Implement `security_scan` tool (runs Semgrep via subprocess) - CLI command
+   - Implement `security_triage` tool (returns skill invocation instruction) - Agentic command
+   - Implement `security_fix` tool (returns skill invocation instruction) - Agentic command
    - Implement `security://findings` resource (returns JSON data)
    - Implement `security://status` resource (returns computed stats)
+   - Implement `security://knowledge/*` resources (expose memory files)
 
 2. **NO LLM API Integration**
    - Do NOT import `anthropic` package
@@ -660,12 +969,14 @@ MCP_TOOL_INVOCATIONS.labels(tool_name='security_triage').inc()
    - Do NOT test AI inference (that's skill tests)
 
 **Acceptance Criteria (CORRECTED):**
-- MCP server runs Semgrep and returns findings
-- MCP tools return skill invocation instructions (not AI results)
+- MCP server runs Semgrep (CLI) and returns findings
+- MCP tools return skill invocation instructions (agentic) with memory imports
+- Memory resources exposed via `security://knowledge/*`
 - No Anthropic SDK imported
 - No API calls made from MCP server
+- All security commands use underscores: `/jpspec:security_scan`, `/jpspec:security_triage`, `/jpspec:security_fix`
 
-### 7.2 Task 258: Implement ADR-008 Security MCP Server Architecture
+### 10.2 Task 258: Implement ADR-008 Security MCP Server Architecture
 
 **Implementation Plan:**
 
@@ -673,33 +984,42 @@ MCP_TOOL_INVOCATIONS.labels(tool_name='security_triage').inc()
 2. **Document skill-based architecture** (AI tool executes skills)
 3. **Remove all references** to LLM API calls in MCP server
 4. **Add examples** of skill invocation flow
+5. **Document memory integration** (skills import memory/security/*.md)
+6. **Clarify CLI vs agentic commands** (deterministic vs LLM-powered)
+7. **Document workflow independence** (not part of core jpspec flow)
 
 **Acceptance Criteria (CORRECTED):**
 - ADR-008 explicitly states "NO LLM API calls in MCP server"
 - Architecture diagrams show skill invocation pattern
 - Code examples show subprocess calls, not API calls
+- Memory integration documented (skills import security knowledge)
+- CLI vs agentic command distinction clearly explained
+- Workflow independence section added (optional capability)
 
-### 7.3 Task 248: Setup CI/CD Security Scanning Pipeline
+### 10.3 Task 248: Setup CI/CD Security Scanning Pipeline
 
 **Implementation Plan:**
 
 1. **Create GitHub Actions workflow** for security scanning
    - Install Semgrep
-   - Run `specify security scan`
+   - Run `specify security scan` (CLI command - deterministic)
    - Upload SARIF to GitHub Security tab
-   - **NO AI triage in CI/CD**
+   - **NO agentic commands in CI/CD** (no `/jpspec:security_triage`)
+   - **NO AI triage in CI/CD** (happens locally with AI tool)
 
 2. **Artifact Storage**
    - Upload findings.json as artifact
    - Developer downloads and uses AI tool locally for triage
 
 **Acceptance Criteria (CORRECTED):**
-- CI/CD runs Semgrep only
+- CI/CD runs CLI commands only (`specify security scan`)
+- No agentic commands in CI/CD (no `/jpspec:*` commands)
 - No AI triage in pipeline
-- No API keys in CI/CD
-- Findings artifact uploaded for local triage
+- No API keys or LLM dependencies in CI/CD
+- Findings artifact uploaded for local triage with AI tool
+- Pipeline documentation clarifies "CLI only, no LLM"
 
-### 7.4 Task 254: Build and Publish Security Scanner Docker Image
+### 10.4 Task 254: Build and Publish Security Scanner Docker Image
 
 **Implementation Plan:**
 
@@ -719,7 +1039,7 @@ MCP_TOOL_INVOCATIONS.labels(tool_name='security_triage').inc()
 - No API key handling in image
 - Image size < 200MB
 
-### 7.5 Task 219: Build Security Commands Test Suite
+### 10.5 Task 219: Build Security Commands Test Suite
 
 **Implementation Plan:**
 
@@ -737,7 +1057,7 @@ MCP_TOOL_INVOCATIONS.labels(tool_name='security_triage').inc()
 - Skill tests use fixtures for validation
 - No tests for AI inference quality
 
-### 7.6 Task 222: Implement Web Security Testing with Playwright DAST
+### 10.6 Task 222: Implement Web Security Testing with Playwright DAST
 
 **Implementation Plan:**
 
@@ -755,7 +1075,7 @@ MCP_TOOL_INVOCATIONS.labels(tool_name='security_triage').inc()
 - Findings normalized to JSON format
 - No AI analysis in scanner
 
-### 7.7 Task 225: Integrate CodeQL for Deep Dataflow Analysis
+### 10.7 Task 225: Integrate CodeQL for Deep Dataflow Analysis
 
 **Implementation Plan:**
 
@@ -775,7 +1095,7 @@ MCP_TOOL_INVOCATIONS.labels(tool_name='security_triage').inc()
 - No AI analysis in scanner
 - Deferred to v2.0 if licensing complex
 
-### 7.8 Task 226: Implement Optional AFL++ Fuzzing Support
+### 10.8 Task 226: Implement Optional AFL++ Fuzzing Support
 
 **Implementation Plan:**
 
@@ -793,7 +1113,7 @@ MCP_TOOL_INVOCATIONS.labels(tool_name='security_triage').inc()
 - Findings normalized to JSON format
 - No AI analysis in scanner
 
-### 7.9 Task 250: Implement Security Scanning Observability
+### 10.9 Task 250: Implement Security Scanning Observability
 
 **Implementation Plan:**
 
@@ -815,24 +1135,26 @@ MCP_TOOL_INVOCATIONS.labels(tool_name='security_triage').inc()
 - No AI-related metrics
 - Structured logs for scanner events
 
-### 7.10 Task 251: Create Pre-commit Hook Configuration for Security Scanning
+### 10.10 Task 251: Create Pre-commit Hook Configuration for Security Scanning
 
 **Implementation Plan:**
 
 1. **Pre-commit Hook** for fast local scanning
-   - Run `specify security scan --fast` on commit
-   - **NO AI triage in pre-commit hook** (too slow)
+   - Run `specify security scan --fast` (CLI command) on commit
+   - **NO agentic commands in pre-commit hook** (too slow, requires LLM)
+   - **NO AI triage in pre-commit hook** (happens separately with AI tool)
 
 2. **Documentation**
    - Install instructions
    - Usage examples
 
 **Acceptance Criteria (CORRECTED):**
-- Pre-commit hook runs scanner only
+- Pre-commit hook runs CLI command only (`specify security scan --fast`)
+- No agentic commands in pre-commit hook
 - No AI triage in pre-commit hook
-- Hook completes in < 10 seconds
+- Hook completes in < 10 seconds (deterministic scanner execution)
 
-### 7.11 Task 253: Track DORA Metrics for Security Scanning
+### 10.11 Task 253: Track DORA Metrics for Security Scanning
 
 **Implementation Plan:**
 
@@ -851,42 +1173,42 @@ MCP_TOOL_INVOCATIONS.labels(tool_name='security_triage').inc()
 
 ---
 
-## 8. Workflow Summary
+## 11. Workflow Summary
 
-### 8.1 Development Workflow
+### 11.1 Development Workflow
 
 ```
 1. Developer writes code
    ↓
-2. Pre-commit hook runs `specify security scan --fast` (scanners only)
+2. Pre-commit hook runs `specify security scan --fast` (CLI - deterministic)
    ↓
 3. Developer pushes to branch
    ↓
-4. CI/CD runs `specify security scan --incremental` (scanners only)
+4. CI/CD runs `specify security scan --incremental` (CLI - deterministic)
    ↓
 5. CI/CD uploads SARIF to GitHub Security tab
    ↓
 6. Developer downloads findings artifact
    ↓
-7. Developer asks AI tool (Claude Code) to triage findings
+7. Developer asks AI tool to triage: "/jpspec:security_triage" (agentic - LLM)
    ↓
 8. AI tool reads security://findings via MCP
    ↓
 9. AI tool invokes security_triage tool via MCP
    ↓
-10. MCP server returns skill invocation instruction
+10. MCP server returns skill invocation instruction with memory imports
     ↓
-11. AI tool executes .claude/skills/security-triage.md
+11. AI tool executes .claude/skills/security-triage.md (imports memory/security/*.md)
     ↓
 12. AI tool writes triage results to docs/security/triage-results.json
     ↓
-13. Developer asks AI tool to generate fixes
+13. Developer asks AI tool to generate fixes: "/jpspec:security_fix" (agentic - LLM)
     ↓
 14. AI tool invokes security_fix tool via MCP
     ↓
-15. MCP server returns skill invocation instruction
+15. MCP server returns skill invocation instruction with memory imports
     ↓
-16. AI tool executes .claude/skills/security-fix.md
+16. AI tool executes .claude/skills/security-fix.md (imports memory/security/*.md)
     ↓
 17. AI tool generates patches
     ↓
@@ -897,23 +1219,27 @@ MCP_TOOL_INVOCATIONS.labels(tool_name='security_triage').inc()
 20. CI/CD verifies fixes (re-run scan, expect fewer findings)
 ```
 
-### 8.2 Where AI Happens
+### 11.2 Where AI Happens
 
-**AI happens ONLY in step 11 and 16:**
-- Step 11: AI tool executes security-triage skill (using its own LLM access)
-- Step 16: AI tool executes security-fix skill (using its own LLM access)
+**AI happens ONLY in step 11 and 16 (agentic commands):**
+- Step 11: AI tool executes security-triage skill with `/jpspec:security_triage` (LLM-powered)
+- Step 16: AI tool executes security-fix skill with `/jpspec:security_fix` (LLM-powered)
 
-**AI does NOT happen in:**
-- Pre-commit hooks (step 2)
-- CI/CD pipelines (step 4-5)
-- MCP server (step 9-10, 14-15)
-- Docker image (scanner execution)
+**AI does NOT happen in (CLI commands only):**
+- Pre-commit hooks (step 2) - CLI: `specify security scan --fast`
+- CI/CD pipelines (step 4-5) - CLI: `specify security scan --incremental`
+- MCP server (step 9-10, 14-15) - Returns instructions, doesn't execute AI
+- Docker image (scanner execution) - CLI: `specify security scan`
+
+**Command types:**
+- **CLI (deterministic)**: `specify security scan` - Safe for automation
+- **Agentic (LLM-powered)**: `/jpspec:security_triage`, `/jpspec:security_fix` - Local development only
 
 ---
 
-## 9. Dependencies and Licensing
+## 12. Dependencies and Licensing
 
-### 9.1 What's Included
+### 12.1 What's Included
 
 | Component | License | API Required | Included In |
 |-----------|---------|--------------|-------------|
@@ -925,7 +1251,7 @@ MCP_TOOL_INVOCATIONS.labels(tool_name='security_triage').inc()
 | uv | Apache 2.0 | No | All |
 | MCP Python SDK | MIT | No | All |
 
-### 9.2 What's NOT Included
+### 12.2 What's NOT Included
 
 | Component | Reason |
 |-----------|--------|
@@ -936,36 +1262,46 @@ MCP_TOOL_INVOCATIONS.labels(tool_name='security_triage').inc()
 
 ---
 
-## 10. Validation Checklist
+## 13. Validation Checklist
 
 Before declaring any implementation complete, verify:
 
 - [ ] No `import anthropic` or `import openai` in Python code
 - [ ] No API key handling in environment variables or config
 - [ ] No LLM API calls in MCP server code
-- [ ] No AI triage in CI/CD pipelines
-- [ ] Skills exist in `.claude/skills/` directory
-- [ ] MCP tools return skill invocation instructions, not AI results
+- [ ] No agentic commands (no `/jpspec:*`) in CI/CD pipelines
+- [ ] CI/CD uses CLI commands only (`specify security scan`)
+- [ ] Skills exist in `.claude/skills/` directory with `@import memory/security/*.md`
+- [ ] Memory files exist in `memory/security/` directory
+- [ ] MCP server exposes `security://knowledge/*` resources
+- [ ] MCP tools return skill invocation instructions with `memory_imports`, not AI results
 - [ ] Docker image contains NO Anthropic SDK
 - [ ] Tests cover scanner execution, not AI inference
 - [ ] Documentation explicitly states "ZERO API KEYS"
+- [ ] All security commands use underscores: `/jpspec:security_scan`, `/jpspec:security_triage`, `/jpspec:security_fix`, `/jpspec:security_report`
+- [ ] Documentation clarifies CLI vs agentic command distinction
+- [ ] Documentation clarifies workflow independence (not part of core jpspec flow)
 
 ---
 
-## 11. Migration from Previous Plan
+## 14. Migration from Previous Plan
 
-### 11.1 Changes Required
+### 14.1 Changes Required
 
 **Code Changes:**
 1. Remove `anthropic` from `pyproject.toml` dependencies
 2. Remove `TriageEngine` class that called LLM APIs
 3. Replace AI API calls with skill invocation instructions
-4. Create skill templates in `.claude/skills/`
+4. Create skill templates in `.claude/skills/` with `@import memory/security/*.md`
+5. Create memory files in `memory/security/` directory
+6. Update all command names to use underscores (`/jpspec:security_scan`, etc.)
 
 **CI/CD Changes:**
-1. Remove AI triage from GitHub Actions workflow
-2. Remove API key secrets from GitHub Actions
-3. Upload findings artifact for local triage
+1. Remove AI triage (agentic commands) from GitHub Actions workflow
+2. Use CLI commands only (`specify security scan`)
+3. Remove API key secrets from GitHub Actions
+4. Upload findings artifact for local triage with AI tool
+5. Document "CLI only, no LLM" in pipeline
 
 **Docker Changes:**
 1. Remove Anthropic SDK from Dockerfile
@@ -975,48 +1311,61 @@ Before declaring any implementation complete, verify:
 1. Update ADR-008 to reflect ZERO API KEYS constraint
 2. Document skill-based architecture pattern
 3. Add examples of local AI tool workflow
+4. Add "Security Memory Integration" section
+5. Add "Command Execution Context" section (CLI vs Agentic)
+6. Add "Workflow Independence" section
+7. Update all command names to use underscores
+8. Clarify CI/CD uses CLI only (no LLM in pipeline)
 
-### 11.2 Breaking Changes
+### 14.2 Breaking Changes
 
 **For users who expected AI in CI/CD:**
-- AI triage now happens locally with AI coding tool
-- CI/CD only runs scanners
-- Developer must use AI tool (Claude Code, etc.) for triage
+- AI triage (agentic commands) now happens locally with AI coding tool
+- CI/CD only runs CLI commands (scanners - deterministic)
+- No `/jpspec:*` commands in CI/CD
+- Developer must use AI tool (Claude Code, etc.) for triage with `/jpspec:security_triage`
 
 **For users who expected MCP server to call AI APIs:**
-- MCP server returns skill invocation instructions
+- MCP server returns skill invocation instructions (agentic commands)
+- Skills import memory files for context (`@import memory/security/*.md`)
 - AI tool executes skills using its own LLM access
 - No API keys needed in deployment
+- Command names changed to use underscores: `/jpspec:security_scan`, `/jpspec:security_triage`, etc.
 
 ---
 
-## 12. Success Criteria
+## 15. Success Criteria
 
 **Platform is complete when:**
 
-1. ✅ MCP server runs scanners (Semgrep, CodeQL, Playwright, AFL++)
-2. ✅ MCP server returns skill invocation instructions (not AI results)
-3. ✅ Skills exist in `.claude/skills/` and are documented
-4. ✅ CI/CD runs scanners only (no AI triage)
-5. ✅ Docker image contains scanners only (no Anthropic SDK)
-6. ✅ Tests cover scanner execution (not AI inference)
-7. ✅ Documentation explicitly states "ZERO API KEYS"
-8. ✅ All 11 tasks have updated implementation plans
-9. ✅ Validation checklist passes for all components
-10. ✅ **ZERO API DEPENDENCIES anywhere in the system**
+1. ✅ MCP server runs scanners (Semgrep, CodeQL, Playwright, AFL++) via CLI commands
+2. ✅ MCP server returns skill invocation instructions with memory imports (agentic commands)
+3. ✅ Skills exist in `.claude/skills/` with `@import memory/security/*.md` and are documented
+4. ✅ Memory files exist in `memory/security/` directory
+5. ✅ MCP server exposes `security://knowledge/*` resources
+6. ✅ CI/CD runs CLI commands only (no agentic commands, no AI triage)
+7. ✅ Docker image contains scanners only (no Anthropic SDK)
+8. ✅ Tests cover scanner execution (not AI inference)
+9. ✅ Documentation explicitly states "ZERO API KEYS"
+10. ✅ All security commands use underscores: `/jpspec:security_scan`, `/jpspec:security_triage`, `/jpspec:security_fix`, `/jpspec:security_report`
+11. ✅ Documentation clarifies CLI vs agentic command distinction
+12. ✅ Documentation clarifies workflow independence (optional capability, not core jpspec flow)
+13. ✅ All 11 tasks have updated implementation plans
+14. ✅ Validation checklist passes for all components
+15. ✅ **ZERO API DEPENDENCIES anywhere in the system**
 
 ---
 
-## 13. References
+## 16. References
 
-### 13.1 Related Documents
+### 16.1 Related Documents
 
 - **ADR-008**: Security MCP Server Architecture (needs update)
 - **Platform Plan v1**: `docs/platform/jpspec-security-platform.md` (superseded)
 - **Assessment**: `docs/assess/jpspec-security-commands-assessment.md`
 - **PRD**: `docs/prd/jpspec-security-commands.md`
 
-### 13.2 External References
+### 16.2 External References
 
 - [MCP Protocol Specification](https://modelcontextprotocol.io/docs/)
 - [Semgrep Documentation](https://semgrep.dev/docs/)
