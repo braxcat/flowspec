@@ -218,10 +218,10 @@ elif Docker detected: SCORE += 1
 if linter detected: SCORE += 1
 if type_checker detected: SCORE += 1
 
-TIER MAPPING:
+TIER MAPPING (0-14 point scoring algorithm; practical maximum score is 14):
 - SCORE 0-4: light
 - SCORE 5-9: medium
-- SCORE 10+: heavy
+- SCORE 10-14: heavy
 ```
 
 **Tier characteristics**:
