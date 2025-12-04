@@ -405,8 +405,8 @@ Auto-detect project name from common sources (in priority order):
 - Replace spaces with dashes (-) or underscores (_).
 - Trim leading and trailing whitespace.
 - Ensure the name is suitable for use in a constitution document and does not contain formatting that could cause issues in markdown or automation.
-If multiple sources exist, prefer the primary language's package manifest.
 
+**Note:** If multiple sources exist, prefer the primary language's package manifest.
 #### 4.3 Format Tech Stack Section
 
 Create formatted tech stack content replacing `[LANGUAGES_AND_FRAMEWORKS]`:
