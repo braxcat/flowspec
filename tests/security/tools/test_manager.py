@@ -730,7 +730,7 @@ class TestSymlinkProtection:
     """Test symlink attack detection."""
 
     def test_rejects_symlinks_in_non_zip_non_tar_archives(self, tmp_path):
-        """Extraction fails with RuntimeError when symlinks detected in non-ZIP/tar archives (Issue #22 fix)."""
+        """Extraction fails with RuntimeError when symlinks are detected in non-ZIP/tar archives (Issue #22 fix)."""
         manager = ToolManager(cache_dir=tmp_path)
         extract_dir = tmp_path / "extract"
         extract_dir.mkdir()
