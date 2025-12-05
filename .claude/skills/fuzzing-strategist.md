@@ -895,7 +895,7 @@ Total: 50-200 files (minimized for diversity)
 - ✅ Processing untrusted files (images, PDFs)
 - ✅ Protocol implementations (HTTP, WebSocket)
 - ✅ Cryptographic primitives
-- ✅ Decompression/decodecs
+- ✅ Decompression/decoders
 
 **When NOT to Use Fuzzing:**
 - ❌ Pure CRUD database operations
