@@ -87,8 +87,8 @@ class SecurityWorkflowIntegration:
         Returns:
             Sanitized text safe for CLI usage.
         """
-        # Remove newlines and control characters
-        text = re.sub(r"[\n\r\t]", " ", text)
+        # Remove ALL control characters (0x00-0x1F and DEL 0x7F)
+        text = re.sub(r"[\x00-\x1f\x7f]", " ", text)
         # Collapse multiple spaces
         text = re.sub(r"\s+", " ", text)
         # Truncate to reasonable length
@@ -164,7 +164,7 @@ class SecurityWorkflowIntegration:
 
         Creates one task per finding with appropriate metadata:
         - Title: "Fix [severity] [CWE]: [title]"
-        - Description: Full finding details with AI explanation
+        - Description: Full finding details with remediation guidance
         - Labels: security, severity, CWE, scanner
         - Priority: Based on severity
         - Acceptance Criteria: Fix, verify, test
@@ -208,13 +208,14 @@ class SecurityWorkflowIntegration:
             # Build description with all details (sanitize for CLI safety)
             description = self._sanitize_for_cli(self._build_task_description(finding))
 
-            # Build labels
+            # Build labels (sanitize all values)
             labels = ["security", finding.severity.value]
             if finding.cwe_id:
-                labels.append(finding.cwe_id.lower().replace("-", ""))
-            labels.append(finding.scanner)
+                labels.append(self._sanitize_for_cli(finding.cwe_id.lower()))
+            if finding.scanner:
+                labels.append(self._sanitize_for_cli(finding.scanner))
             if feature_id:
-                labels.append(feature_id)
+                labels.append(self._sanitize_for_cli(feature_id))
 
             # Build acceptance criteria (sanitize location data)
             ac_list = [
@@ -247,9 +248,9 @@ class SecurityWorkflowIntegration:
             for ac in ac_list:
                 cmd.extend(["--ac", ac])
 
-            # Add assignee if specified
+            # Add assignee if specified (sanitize value)
             if auto_assign:
-                cmd.extend(["-a", auto_assign])
+                cmd.extend(["-a", self._sanitize_for_cli(auto_assign)])
 
             # Execute command
             try:
@@ -307,21 +308,21 @@ class SecurityWorkflowIntegration:
             ...     feature_id="auth-system"
             ... )
         """
-        # Build command
+        # Build command (sanitize all parameters)
         cmd = [
             self.hooks_cli,
             "hooks",
             "emit",
-            f"security.{event_type}",
+            f"security.{self._sanitize_for_cli(event_type)}",
         ]
 
         # Add feature ID if provided
         if feature_id:
-            cmd.extend(["--spec-id", feature_id])
+            cmd.extend(["--spec-id", self._sanitize_for_cli(feature_id)])
 
         # Add task ID if provided
         if task_id:
-            cmd.extend(["--task-id", task_id])
+            cmd.extend(["--task-id", self._sanitize_for_cli(task_id)])
 
         try:
             subprocess.run(

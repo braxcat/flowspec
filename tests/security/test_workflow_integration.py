@@ -395,6 +395,35 @@ class TestSecurityWorkflowIntegration:
         assert "Remediation Guidance" not in description
         assert "References" not in description
 
+    def test_sanitize_for_cli_newlines(self):
+        """Test sanitization removes newlines but allows semicolons."""
+        integration = SecurityWorkflowIntegration()
+        result = integration._sanitize_for_cli("title\n; rm -rf /;")
+
+        # Newlines should be removed
+        assert "\n" not in result
+        # Semicolons are allowed (not command injection in our context)
+        assert ";" in result
+
+    def test_sanitize_for_cli_control_chars(self):
+        """Test sanitization removes all control characters."""
+        integration = SecurityWorkflowIntegration()
+        result = integration._sanitize_for_cli("test\x00\x1f\x7f")
+
+        # Control characters should be removed
+        assert "\x00" not in result
+        assert "\x1f" not in result
+        assert "\x7f" not in result
+
+    def test_sanitize_for_cli_truncation(self):
+        """Test sanitization truncates long input."""
+        integration = SecurityWorkflowIntegration()
+        long_input = "a" * 600
+        result = integration._sanitize_for_cli(long_input)
+
+        # Should be truncated to 500 characters
+        assert len(result) == 500
+
 
 class TestConvenienceFunctions:
     """Test module-level convenience functions."""
