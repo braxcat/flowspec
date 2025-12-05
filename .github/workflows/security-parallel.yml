@@ -113,7 +113,7 @@ jobs:
 
           # Check if multiple severities were specified (comma-separated)
           if echo "$FAIL_ON" | grep -q ","; then
-            echo "⚠️ Warning: Multiple severities specified but only single severity is supported."
+            echo "::warning::Multiple severities specified but only single severity is supported."
             FAIL_SEVERITY=$(echo "$FAIL_ON" | cut -d',' -f1)
             echo "   Using: $FAIL_SEVERITY"
           else
@@ -136,15 +136,14 @@ jobs:
             echo "critical=${CRITICAL}" >> $GITHUB_OUTPUT
             echo "component_name=${COMPONENT_NAME}" >> $GITHUB_OUTPUT
 
-            echo "📊 [${COMPONENT}] ${TOTAL} findings (${CRITICAL} critical)"
+            echo "[${COMPONENT}] ${TOTAL} findings (${CRITICAL} critical)"
           else
             echo "total=0" >> $GITHUB_OUTPUT
             echo "critical=0" >> $GITHUB_OUTPUT
             echo "component_name=${COMPONENT_NAME}" >> $GITHUB_OUTPUT
           fi
 
-          # Note: continue-on-error: true handles exit code, so exit 0 is redundant
-          # but kept for clarity
+          # Note: continue-on-error: true handles exit code
 
       - name: Upload SARIF for ${{ matrix.component }}
         if: always()
@@ -191,8 +190,8 @@ jobs:
 
           for sarif in $(find scan-results -name "*.sarif"); do
             if [ -f "$sarif" ]; then
-              FINDINGS=$(jq '.runs[0].results | length' "$sarif" || echo "0")
-              CRITICAL=$(jq '[.runs[0].results[] | select(.level == "error" and (.properties.severity == "critical" or .properties.severity == "CRITICAL"))] | length' "$sarif" || echo "0")
+              FINDINGS=$(jq '.runs[0].results | length' "$sarif" 2>/dev/null || echo "0")
+              CRITICAL=$(jq '[.runs[0].results[] | select(.level == "error" and (.properties.severity == "critical" or .properties.severity == "CRITICAL"))] | length' "$sarif" 2>/dev/null || echo "0")
 
               TOTAL_FINDINGS=$((TOTAL_FINDINGS + FINDINGS))
               TOTAL_CRITICAL=$((TOTAL_CRITICAL + CRITICAL))
@@ -202,7 +201,7 @@ jobs:
           done
 
           echo ""
-          echo "📊 Total Results:"
+          echo "Total Results:"
           echo "  - Total Findings: ${TOTAL_FINDINGS}"
           echo "  - Critical Findings: ${TOTAL_CRITICAL}"
 
@@ -214,9 +213,9 @@ jobs:
             echo "**Critical Findings:** ${TOTAL_CRITICAL}"
             echo ""
             if [ "$TOTAL_CRITICAL" -gt 0 ]; then
-              echo "⚠️ **Action Required:** ${TOTAL_CRITICAL} critical vulnerabilities found across components."
+              echo "**Action Required:** ${TOTAL_CRITICAL} critical vulnerabilities found across components."
             else
-              echo "✅ No critical vulnerabilities found."
+              echo "No critical vulnerabilities found."
             fi
           } >> $GITHUB_STEP_SUMMARY
 
