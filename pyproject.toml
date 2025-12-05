@@ -1,7 +1,7 @@
 [project]
 name = "specify-cli"
 
-version = "0.0.298"
+version = "0.0.295"
 
 
 
@@ -32,6 +32,11 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/specify_cli"]
+
+[project.optional-dependencies]
+dast = [
+    "playwright>=1.48.0",
+]
 
 [dependency-groups]
 dev = [
