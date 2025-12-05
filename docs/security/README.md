@@ -61,7 +61,7 @@ docs/
 - Configurable severity thresholds
 
 ### AI-Powered Triage
-- Automatic TP/FP/NI classification
+- Automatic True Positive (TP) / False Positive (FP) / Needs Investigation (NI) classification
 - Confidence scoring
 - Plain-English explanations
 - Risk prioritization
@@ -148,7 +148,7 @@ specify security audit results.json --format markdown
 - **Issues**: Report bugs or request features on GitHub
 - **Discussions**: Ask questions in GitHub Discussions
 - **Updates**: Check release notes for new features
-- **Examples**: See `examples/security/` for working examples
+- **Examples**: See CI/CD integration guide for working examples
 
 ## Version History
 

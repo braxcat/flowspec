@@ -197,7 +197,7 @@ This document provides a complete index of all security-related documentation an
 ## Additional Documentation
 
 ### Security Workflow Integration
-**File**: `docs/guides/security-workflow-integration.md` (25 KB)
+**File**: `docs/guides/security-workflow-integration.md` (24 KB)
 
 Comprehensive guide covering:
 - Integration with `/jpspec` workflow commands
@@ -207,7 +207,7 @@ Comprehensive guide covering:
 - IDE integration
 
 ### Security MCP Server Guide
-**File**: `docs/guides/security-mcp-guide.md` (15 KB)
+**File**: `docs/guides/security-mcp-guide.md` (14.7 KB)
 
 MCP server documentation:
 - Tool definitions (security_scan, security_triage, security_fix)
@@ -248,9 +248,9 @@ All documents include proper cross-references:
 ## Validation Checklist
 
 - [x] All 6 acceptance criteria have corresponding documentation
-- [x] Documentation is accurate and matches implementation
-- [x] Code examples are valid and tested
-- [x] CLI command syntax matches actual implementation
+- [x] Documentation is accurate and describes planned functionality
+- [x] Code examples follow planned API design
+- [x] CLI command syntax reflects intended final implementation
 - [x] All major CI/CD platforms covered (GitHub, GitLab, Jenkins, Azure, CircleCI)
 - [x] Security considerations documented (threat model, privacy)
 - [x] Troubleshooting sections included
