@@ -35,7 +35,7 @@ backlog task edit 42 -s Done     # Complete task
 /flow:plan      # Execute planning workflow
 /flow:implement # Implementation with code review
 /flow:validate  # QA, security, docs validation
-/flow:operate   # SRE operations (CI/CD, K8s)
+# NOTE: /flow:operate removed - deployment is outer loop (see flowspec_workflow.yml)
 
 # Setup & Configuration Commands
 /flow:init      # Initialize constitution (greenfield/brownfield)
@@ -63,7 +63,35 @@ backlog task edit 42 -s Done     # Complete task
 
 /qa:test            # Execute tests
 /qa:review          # Generate checklist
+
+# Casual Development
+/vibe               # Casual mode - just logs and light docs (see Default Development Mode)
 ```
+
+## Default Development Mode
+
+**When no explicit `/flow:*` command is specified**, default to **vibe mode** principles:
+
+| Situation | Approach |
+|-----------|----------|
+| Quick fix, small change | Just code it, log decisions to `.logs/` |
+| Exploring an idea | Use `/vibe` - minimal ceremony |
+| Prototyping | Use `/vibe` - fast iteration |
+| Learning/experimenting | Use `/vibe` - low overhead |
+| Feature with clear requirements | Start with `/flow:assess` |
+| Complex multi-session work | Use full SDD workflow |
+
+**Vibe mode always requires**:
+- Log significant decisions to `.logs/decisions/`
+- Log events to `.logs/events/`
+
+**Vibe mode does NOT require**:
+- Formal PRD or spec documents
+- Backlog task creation
+- Workflow state management
+- Constitution validation
+
+**When to escalate to full SDD**: If work grows larger than expected, involves multiple people, touches security/compliance, or needs formal requirements.
 
 ## INITIAL Document Workflow
 
@@ -247,7 +275,8 @@ flowspec workflow validate --json
 | `/flow:plan` | Specified, Researched | Planned | software-architect, platform-engineer |
 | `/flow:implement` | Planned | In Implementation | frontend/backend engineers, reviewers |
 | `/flow:validate` | In Implementation | Validated | quality-guardian, secure-by-design-engineer |
-| `/flow:operate` | Validated | Deployed | sre-agent |
+
+*Note: `/flow:research` is optional. `/flow:operate` has been removed - deployment is outer loop.*
 
 ### Customizing Your Workflow
 
