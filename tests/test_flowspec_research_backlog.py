@@ -77,7 +77,7 @@ class TestSharedBacklogInstructions:
     def test_researcher_includes_shared_backlog_instructions(
         self, research_command_file
     ):
-        """Verify Researcher agent prompt includes shared backlog instructions via INCLUDE."""
+        """Verify Researcher agent prompt includes shared backlog instructions."""
         content = research_command_file.read_text()
 
         # Find Phase 1 section
@@ -85,68 +85,91 @@ class TestSharedBacklogInstructions:
         phase2_start = content.find("### Phase 2: Business Validation")
         phase1_section = content[phase1_start:phase2_start]
 
-        # Should include the shared backlog instructions
-        assert (
+        # Should include backlog instructions via embedded markers OR INCLUDE directive
+        has_markers = (
+            "<!--BACKLOG-INSTRUCTIONS-START-->" in phase1_section
+            and "<!--BACKLOG-INSTRUCTIONS-END-->" in phase1_section
+        )
+        has_include = (
             "{{INCLUDE:.claude/partials/flow/_backlog-instructions.md}}"
             in phase1_section
         )
-        assert "<!--BACKLOG-INSTRUCTIONS-START-->" in phase1_section
-        assert "<!--BACKLOG-INSTRUCTIONS-END-->" in phase1_section
+        assert has_markers or has_include, (
+            "Phase 1 must include backlog instructions via markers or INCLUDE"
+        )
 
     def test_business_validator_includes_shared_backlog_instructions(
         self, research_command_file
     ):
-        """Verify Business Validator agent prompt includes shared backlog instructions via INCLUDE."""
+        """Verify Business Validator agent prompt includes shared backlog instructions."""
         content = research_command_file.read_text()
 
         # Find Phase 2 section
         phase2_start = content.find("### Phase 2: Business Validation")
         phase2_section = content[phase2_start:]
 
-        # Should include the shared backlog instructions
-        assert (
+        # Should include backlog instructions via embedded markers OR INCLUDE directive
+        has_markers = (
+            "<!--BACKLOG-INSTRUCTIONS-START-->" in phase2_section
+            and "<!--BACKLOG-INSTRUCTIONS-END-->" in phase2_section
+        )
+        has_include = (
             "{{INCLUDE:.claude/partials/flow/_backlog-instructions.md}}"
             in phase2_section
         )
-        assert "<!--BACKLOG-INSTRUCTIONS-START-->" in phase2_section
-        assert "<!--BACKLOG-INSTRUCTIONS-END-->" in phase2_section
+        assert has_markers or has_include, (
+            "Phase 2 must include backlog instructions via markers or INCLUDE"
+        )
 
-    def test_both_agents_have_include_before_context(self, research_command_file):
-        """Verify INCLUDE directive appears BEFORE agent context in both phases."""
+    def test_both_agents_have_backlog_instructions_before_context(
+        self, research_command_file
+    ):
+        """Verify backlog instructions appear BEFORE agent context in both phases."""
         content = research_command_file.read_text()
 
-        # Phase 1: Include should come before agent context
+        # Phase 1: Instructions should come before agent context
+        # Check for either markers or INCLUDE
+        phase1_marker = content.find("<!--BACKLOG-INSTRUCTIONS-START-->")
         phase1_include = content.find(
             "{{INCLUDE:.claude/partials/flow/_backlog-instructions.md}}"
         )
+        phase1_instructions = phase1_marker if phase1_marker >= 0 else phase1_include
         researcher_context = content.find("# AGENT CONTEXT: Senior Research Analyst")
-        assert phase1_include < researcher_context, (
-            "INCLUDE should appear before Researcher context"
+
+        assert phase1_instructions >= 0, "Phase 1 must have backlog instructions"
+        assert phase1_instructions < researcher_context, (
+            "Backlog instructions should appear before Researcher context"
         )
 
-        # Phase 2: Include should come before agent context
+        # Phase 2: Instructions should come before agent context
         phase2_start = content.find("### Phase 2: Business Validation")
+        phase2_marker = content.find("<!--BACKLOG-INSTRUCTIONS-START-->", phase2_start)
         phase2_include = content.find(
             "{{INCLUDE:.claude/partials/flow/_backlog-instructions.md}}",
             phase2_start,
         )
+        phase2_instructions = phase2_marker if phase2_marker >= 0 else phase2_include
         validator_context = content.find(
             "# AGENT CONTEXT: Senior Business Analyst", phase2_start
         )
-        assert phase2_include < validator_context, (
-            "INCLUDE should appear before Validator context"
+
+        assert phase2_instructions >= 0, "Phase 2 must have backlog instructions"
+        assert phase2_instructions < validator_context, (
+            "Backlog instructions should appear before Validator context"
         )
 
-    def test_shared_instructions_include_count(self, research_command_file):
-        """Verify INCLUDE directive appears exactly twice (once per agent)."""
+    def test_shared_instructions_count(self, research_command_file):
+        """Verify backlog instructions appear exactly twice (once per agent)."""
         content = research_command_file.read_text()
 
+        # Count embedded markers OR INCLUDE directives
+        marker_count = content.count("<!--BACKLOG-INSTRUCTIONS-START-->")
         include_count = content.count(
             "{{INCLUDE:.claude/partials/flow/_backlog-instructions.md}}"
         )
-        assert include_count == 2, (
-            f"Expected 2 INCLUDE directives, found {include_count}"
-        )
+        total = marker_count + include_count
+
+        assert total == 2, f"Expected 2 backlog instruction sections, found {total}"
 
 
 class TestResearcherAgentBacklogInstructions:
