@@ -464,13 +464,8 @@ func ensureGolangciLint() error {
 
 	fmt.Printf("📥 Installing golangci-lint %s...\n", golangciLintVersion)
 
-	installCmd := fmt.Sprintf("curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin %s", golangciLintVersion)
-
-	cmd := exec.Command("sh", "-c", installCmd)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if err := cmd.Run(); err != nil {
+	// Use go install for safe, static command execution (avoids shell injection)
+	if err := sh.Run("go", "install", "github.com/golangci/golangci-lint/cmd/golangci-lint@"+golangciLintVersion); err != nil {
 		return fmt.Errorf("failed to install golangci-lint: %w", err)
 	}
 
