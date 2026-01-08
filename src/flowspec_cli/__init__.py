@@ -4537,12 +4537,17 @@ def download_and_extract_two_stage(
             if base_zip and base_zip.exists():
                 base_zip.unlink()
 
-        # CRITICAL: Wipe .github/agents/ COMPLETELY after base extraction
-        # Base spec-kit has spec.*.agent.md files - we want NONE of them
-        # Flowspec extension will write fresh flow.*.agent.md files
+        # Remove only speckit-prefixed agent files, preserve user's custom agents
+        # Legacy spec-kit had spec.*.agent.md files - we remove those
+        # but keep any custom agents the user may have created
         github_agents_dir = project_path / ".github" / "agents"
         if github_agents_dir.exists():
-            shutil.rmtree(github_agents_dir)
+            for agent_file in github_agents_dir.iterdir():
+                if agent_file.is_file() and (
+                    agent_file.name.startswith("spec.")
+                    or agent_file.name.startswith("speckit.")
+                ):
+                    agent_file.unlink()
 
         # Extract extension for this agent (overlay on top of base)
         step_name = (
@@ -5354,15 +5359,20 @@ def init(
     ) as live:
         tracker.attach_refresh(lambda: live.update(tracker.render()))
         try:
-            verify = not skip_tls
-            local_ssl_context = ssl_context if verify else False
-            local_client = httpx.Client(verify=local_ssl_context)
+            # Import local template deployment
+            from .templates_deploy import deploy_local_templates, is_templates_bundled
 
-            if layered:
-                # Two-stage download: base + extension (supports multiple agents)
+            # Use local templates by default (standalone mode)
+            # Only download from GitHub if --branch is specified (for development)
+            if branch:
+                # Development mode: download from specified branch
+                verify = not skip_tls
+                local_ssl_context = ssl_context if verify else False
+                local_client = httpx.Client(verify=local_ssl_context)
+
                 download_and_extract_two_stage(
                     project_path,
-                    selected_agents,  # Now a list
+                    selected_agents,
                     selected_script,
                     here,
                     verbose=False,
@@ -5374,22 +5384,52 @@ def init(
                     extension_version=extension_version,
                     branch=branch,
                 )
-            else:
-                # Single-stage download (legacy mode or base-only, supports multiple agents)
-                download_and_extract_template(
+            elif is_templates_bundled():
+                # Standalone mode: use bundled templates
+                deploy_local_templates(
                     project_path,
-                    selected_agents,  # Now a list
+                    selected_agents,
                     selected_script,
-                    here,
+                    force=force,
                     verbose=False,
                     tracker=tracker,
-                    client=local_client,
-                    debug=debug,
-                    github_token=github_token,
-                    repo_owner=REPO_OWNER,
-                    repo_name=REPO_NAME,
-                    version=extension_version,
                 )
+            else:
+                # Fallback: download from GitHub releases
+                verify = not skip_tls
+                local_ssl_context = ssl_context if verify else False
+                local_client = httpx.Client(verify=local_ssl_context)
+
+                if layered:
+                    download_and_extract_two_stage(
+                        project_path,
+                        selected_agents,
+                        selected_script,
+                        here,
+                        verbose=False,
+                        tracker=tracker,
+                        client=local_client,
+                        debug=debug,
+                        github_token=github_token,
+                        base_version=base_version,
+                        extension_version=extension_version,
+                        branch=branch,
+                    )
+                else:
+                    download_and_extract_template(
+                        project_path,
+                        selected_agents,
+                        selected_script,
+                        here,
+                        verbose=False,
+                        tracker=tracker,
+                        client=local_client,
+                        debug=debug,
+                        github_token=github_token,
+                        repo_owner=REPO_OWNER,
+                        repo_name=REPO_NAME,
+                        version=extension_version,
+                    )
 
             ensure_executable_scripts(project_path, tracker=tracker)
 
