@@ -28,9 +28,10 @@ def parse_response(data: str):
 
 ## Naming (Avoid Shadowing)
 
-Never use Python built-in names:
-- **Bad**: `id`, `type`, `list`, `dict`, `input`, `filter`, `map`, `hash`
-- **Good**: `finding_id`, `item_type`, `items`, `data`, `user_input`
+Never use Python built-in names as variables:
+- **Bad**: `type`, `list`, `dict`, `input`, `filter`, `map`, `hash`
+- **Good**: `item_type`, `items`, `data`, `user_input`
+- **Note**: `id` is acceptable in public APIs where required by external contracts
 
 Never shadow imported modules:
 - **Bad**: `html = generate_html()` when `import html` exists
@@ -52,6 +53,9 @@ path.write_text(content, encoding="utf-8")
 Always clean up temp files:
 
 ```python
+import tempfile
+from pathlib import Path
+
 with tempfile.NamedTemporaryFile(delete=False) as f:
     temp_path = f.name
 try:

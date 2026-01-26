@@ -44,6 +44,8 @@ Every API function needs tests for:
 Every test that reads files MUST include:
 
 ```python
+from pathlib import Path
+
 def get_project_root() -> Path:
     """Get the project root directory reliably."""
     return Path(__file__).resolve().parent.parent

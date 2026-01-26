@@ -76,7 +76,7 @@ In `.flowspec/rigor-config.yml`:
 ```yaml
 enforcement:
   rules:
-    EXEC-005: warn  # Set specific rule to warn mode
+    EXEC-006: warn  # Set specific rule to warn mode
 ```
 
 **Never disable BLOCKING rules without team approval.**
