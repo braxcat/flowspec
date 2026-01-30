@@ -47,10 +47,10 @@ class TestSkillsDeployFunction:
         project_root = tmp_path / "project"
         project_root.mkdir()
 
-        # Mock _find_templates_skills_dir to return our test templates
+        # Mock _find_templates_dir to return our test templates when called with "skills"
         with patch(
-            "flowspec_cli.skills.scaffold._find_templates_skills_dir",
-            return_value=templates_skills,
+            "flowspec_cli.skills.scaffold._find_templates_dir",
+            side_effect=lambda subdir: templates_skills if subdir == "skills" else None,
         ):
             deployed = deploy_skills(project_root)
 
@@ -85,10 +85,10 @@ class TestSkillsDeployFunction:
         project_root = tmp_path / "project"
         project_root.mkdir()
 
-        # Mock _find_templates_skills_dir to return our test templates
+        # Mock _find_templates_dir to return our test templates when called with "skills"
         with patch(
-            "flowspec_cli.skills.scaffold._find_templates_skills_dir",
-            return_value=templates_skills,
+            "flowspec_cli.skills.scaffold._find_templates_dir",
+            side_effect=lambda subdir: templates_skills if subdir == "skills" else None,
         ):
             deployed = deploy_skills(project_root)
 
@@ -130,10 +130,10 @@ class TestSkillsDeployFunction:
         existing_skill = skills_dest / "SKILL.md"
         existing_skill.write_text("# Old Version")
 
-        # Mock _find_templates_skills_dir and deploy without force
+        # Mock _find_templates_dir and deploy without force
         with patch(
-            "flowspec_cli.skills.scaffold._find_templates_skills_dir",
-            return_value=templates_skills,
+            "flowspec_cli.skills.scaffold._find_templates_dir",
+            side_effect=lambda subdir: templates_skills if subdir == "skills" else None,
         ):
             deployed = deploy_skills(project_root, force=False)
 
@@ -160,10 +160,10 @@ class TestSkillsDeployFunction:
         existing_skill = skills_dest / "SKILL.md"
         existing_skill.write_text("# Old Version")
 
-        # Mock _find_templates_skills_dir and deploy with force
+        # Mock _find_templates_dir and deploy with force
         with patch(
-            "flowspec_cli.skills.scaffold._find_templates_skills_dir",
-            return_value=templates_skills,
+            "flowspec_cli.skills.scaffold._find_templates_dir",
+            side_effect=lambda subdir: templates_skills if subdir == "skills" else None,
         ):
             deployed = deploy_skills(project_root, force=True)
 

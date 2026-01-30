@@ -5434,6 +5434,43 @@ def init(
                 # Non-fatal error - continue with project initialization
                 tracker.error("hooks", f"scaffolding failed: {hook_error}")
 
+            # Helper function for deployment steps with consistent error handling
+            def run_deploy_step(
+                step_name: str,
+                deploy_fn,
+                item_label: str,
+                target_dir: str,
+            ) -> None:
+                """Run a deployment step with consistent progress tracking and error handling."""
+                tracker.start(step_name)
+                try:
+                    deployed_items = deploy_fn()
+                    if deployed_items:
+                        tracker.complete(
+                            step_name,
+                            f"deployed {len(deployed_items)} {item_label}(s) to {target_dir}",
+                        )
+                    else:
+                        tracker.complete(step_name, f"no new {item_label}s deployed")
+                except PermissionError as error:
+                    # Non-fatal error - continue with project initialization
+                    tracker.error(
+                        step_name,
+                        f"deployment failed due to permission error: {error}",
+                    )
+                except OSError as error:
+                    # Non-fatal error - continue with project initialization
+                    tracker.error(
+                        step_name,
+                        f"deployment failed due to OS error: {error}",
+                    )
+                except Exception as error:
+                    # Non-fatal error - continue with project initialization
+                    tracker.error(
+                        step_name,
+                        f"deployment failed ({type(error).__name__}): {error}",
+                    )
+
             # Deploy skills from templates/skills/ to .claude/skills/
             tracker.start("skills")
             try:
@@ -5447,7 +5484,7 @@ def init(
                 elif deployed_skills:
                     tracker.complete(
                         "skills",
-                        f"deployed {len(deployed_skills)} skills to .claude/skills/",
+                        f"deployed {len(deployed_skills)} skill(s) to .claude/skills/",
                     )
                 else:
                     tracker.complete("skills", "no new skills deployed")
@@ -5471,68 +5508,24 @@ def init(
                 )
 
             # Deploy commands from templates/commands/ to .claude/commands/
-            tracker.start("commands")
-            try:
-                from .skills import deploy_commands
+            from .skills import deploy_commands
 
-                deployed_commands = deploy_commands(project_path, force=force)
-                if deployed_commands:
-                    tracker.complete(
-                        "commands",
-                        f"deployed {len(deployed_commands)} command(s) to .claude/commands/",
-                    )
-                else:
-                    tracker.complete("commands", "no new commands deployed")
-            except PermissionError as commands_error:
-                # Non-fatal error - continue with project initialization
-                tracker.error(
-                    "commands",
-                    f"deployment failed due to permission error: {commands_error}",
-                )
-            except OSError as commands_error:
-                # Non-fatal error - continue with project initialization
-                tracker.error(
-                    "commands",
-                    f"deployment failed due to OS error: {commands_error}",
-                )
-            except Exception as commands_error:
-                # Non-fatal error - continue with project initialization
-                tracker.error(
-                    "commands",
-                    f"deployment failed ({type(commands_error).__name__}): {commands_error}",
-                )
+            run_deploy_step(
+                "commands",
+                lambda: deploy_commands(project_path, force=force),
+                "command",
+                ".claude/commands/",
+            )
 
             # Deploy partials from templates/partials/ to .claude/partials/
-            tracker.start("partials")
-            try:
-                from .skills import deploy_partials
+            from .skills import deploy_partials
 
-                deployed_partials = deploy_partials(project_path, force=force)
-                if deployed_partials:
-                    tracker.complete(
-                        "partials",
-                        f"deployed {len(deployed_partials)} partial(s) to .claude/partials/",
-                    )
-                else:
-                    tracker.complete("partials", "no new partials deployed")
-            except PermissionError as partials_error:
-                # Non-fatal error - continue with project initialization
-                tracker.error(
-                    "partials",
-                    f"deployment failed due to permission error: {partials_error}",
-                )
-            except OSError as partials_error:
-                # Non-fatal error - continue with project initialization
-                tracker.error(
-                    "partials",
-                    f"deployment failed due to OS error: {partials_error}",
-                )
-            except Exception as partials_error:
-                # Non-fatal error - continue with project initialization
-                tracker.error(
-                    "partials",
-                    f"deployment failed ({type(partials_error).__name__}): {partials_error}",
-                )
+            run_deploy_step(
+                "partials",
+                lambda: deploy_partials(project_path, force=force),
+                "partial",
+                ".claude/partials/",
+            )
 
             # Install VS Code Copilot agents from embedded templates
             tracker.add("copilot-agents", "Install VS Code Copilot agents")

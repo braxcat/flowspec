@@ -60,26 +60,29 @@ class SkillSyncResult:
         return ", ".join(parts) if parts else "no skills found"
 
 
-def _find_templates_skills_dir() -> Path | None:
-    """Locate the templates/skills directory.
+def _find_templates_dir(subdir: str) -> Path | None:
+    """Locate a templates subdirectory.
 
     Templates are bundled with the flowspec_cli package at
-    flowspec_cli/templates/skills/. Falls back to source repo
+    flowspec_cli/templates/{subdir}/. Falls back to source repo
     structure for development mode.
 
+    Args:
+        subdir: Name of the subdirectory under templates/ (e.g., "skills", "commands", "partials")
+
     Returns:
-        Path to templates/skills directory, or None if not found.
+        Path to templates/{subdir} directory, or None if not found.
     """
     # First, check for bundled templates in the package
     # This is the primary location for standalone flowspec
-    package_templates = Path(__file__).parent.parent / "templates" / "skills"
+    package_templates = Path(__file__).parent.parent / "templates" / subdir
     if package_templates.exists():
         return package_templates
 
     # Fallback: Look for templates in source repo structure
     # This handles development mode where templates are at repo root.
     src_dir = Path(__file__).parent.parent.parent.parent  # Go up to repo root
-    potential_templates = src_dir / "templates" / "skills"
+    potential_templates = src_dir / "templates" / subdir
     if potential_templates.exists():
         return potential_templates
 
@@ -105,7 +108,7 @@ def deploy_skills(
     if skip_skills:
         return []
 
-    templates_skills_dir = _find_templates_skills_dir()
+    templates_skills_dir = _find_templates_dir("skills")
     if templates_skills_dir is None:
         logger.warning(
             "Skills templates directory not found. "
@@ -351,35 +354,6 @@ def compare_skills_after_extraction(
     result.unchanged.sort()
 
     return result
-
-
-def _find_templates_dir(subdir: str) -> Path | None:
-    """Locate a templates subdirectory.
-
-    Templates are bundled with the flowspec_cli package at
-    flowspec_cli/templates/{subdir}/. Falls back to source repo
-    structure for development mode.
-
-    Args:
-        subdir: Name of the subdirectory under templates/ (e.g., "commands", "partials")
-
-    Returns:
-        Path to templates/{subdir} directory, or None if not found.
-    """
-    # First, check for bundled templates in the package
-    # This is the primary location for standalone flowspec
-    package_templates = Path(__file__).parent.parent / "templates" / subdir
-    if package_templates.exists():
-        return package_templates
-
-    # Fallback: Look for templates in source repo structure
-    # This handles development mode where templates are at repo root.
-    src_dir = Path(__file__).parent.parent.parent.parent  # Go up to repo root
-    potential_templates = src_dir / "templates" / subdir
-    if potential_templates.exists():
-        return potential_templates
-
-    return None
 
 
 def _deploy_template_directory(
