@@ -5438,7 +5438,6 @@ def init(
             def run_deploy_step(
                 step_name: str,
                 deploy_fn,
-                item_label: str,
                 target_dir: str,
             ) -> None:
                 """Run a deployment step with consistent progress tracking and error handling."""
@@ -5448,10 +5447,10 @@ def init(
                     if deployed_items:
                         tracker.complete(
                             step_name,
-                            f"deployed {len(deployed_items)} {item_label}(s) to {target_dir}",
+                            f"deployed {len(deployed_items)} item(s) to {target_dir}",
                         )
                     else:
-                        tracker.complete(step_name, f"no new {item_label}s deployed")
+                        tracker.complete(step_name, "no new items deployed")
                 except PermissionError as error:
                     # Non-fatal error - continue with project initialization
                     tracker.error(
@@ -5513,7 +5512,6 @@ def init(
             run_deploy_step(
                 "commands",
                 lambda: deploy_commands(project_path, force=force),
-                "command",
                 ".claude/commands/",
             )
 
@@ -5523,7 +5521,6 @@ def init(
             run_deploy_step(
                 "partials",
                 lambda: deploy_partials(project_path, force=force),
-                "partial",
                 ".claude/partials/",
             )
 

@@ -421,7 +421,7 @@ def _deploy_template_directory(
                     dest_item.unlink()
             except OSError as exc:
                 raise RuntimeError(
-                    f"Failed to remove existing {template_subdir[:-1]} '{dest_item}'. "
+                    f"Failed to remove existing item '{dest_item}'. "
                     "Please check file permissions and whether any files are in use."
                 ) from exc
 
@@ -432,7 +432,7 @@ def _deploy_template_directory(
                 shutil.copy2(item, dest_item)
         except OSError as exc:
             raise RuntimeError(
-                f"Failed to copy {template_subdir[:-1]} '{item}' to '{dest_item}'. "
+                f"Failed to copy '{item}' to '{dest_item}'. "
                 "Please check file permissions, available disk space, and whether any "
                 "files are in use."
             ) from exc
