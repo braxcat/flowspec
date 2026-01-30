@@ -5278,6 +5278,8 @@ def init(
             ("git", "Initialize git repository"),
             ("hooks", "Scaffold hooks"),
             ("skills", "Deploy skills"),
+            ("commands", "Deploy commands"),
+            ("partials", "Deploy partials"),
             ("constitution", "Set up constitution"),
             ("final", "Finalize"),
         ]:
@@ -5294,6 +5296,8 @@ def init(
             ("git", "Initialize git repository"),
             ("hooks", "Scaffold hooks"),
             ("skills", "Deploy skills"),
+            ("commands", "Deploy commands"),
+            ("partials", "Deploy partials"),
             ("constitution", "Set up constitution"),
             ("final", "Finalize"),
         ]:
@@ -5467,7 +5471,6 @@ def init(
                 )
 
             # Deploy commands from templates/commands/ to .claude/commands/
-            tracker.add("commands", "Deploy commands")
             tracker.start("commands")
             try:
                 from .skills import deploy_commands
@@ -5500,7 +5503,6 @@ def init(
                 )
 
             # Deploy partials from templates/partials/ to .claude/partials/
-            tracker.add("partials", "Deploy partials")
             tracker.start("partials")
             try:
                 from .skills import deploy_partials

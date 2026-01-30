@@ -382,47 +382,55 @@ def _find_templates_dir(subdir: str) -> Path | None:
     return None
 
 
-def deploy_commands(
+def _deploy_template_directory(
     project_root: Path,
+    template_subdir: str,
+    dest_subdir: str,
     *,
     force: bool = False,
-    skip_commands: bool = False,
+    skip: bool = False,
 ) -> list[Path]:
-    """Deploy commands from templates/commands/ to .claude/commands/.
+    """Deploy a template directory to .claude/{dest_subdir}/.
+
+    This is a shared helper function used by deploy_commands and deploy_partials
+    to reduce code duplication. Both functions follow the same pattern of copying
+    template files/directories to .claude/{dest_subdir}/.
 
     Args:
         project_root: Root directory of the project
-        force: If True, overwrite existing commands
-        skip_commands: If True, skip command deployment entirely
+        template_subdir: Name of the template subdirectory (e.g., "commands", "partials")
+        dest_subdir: Name of the destination subdirectory under .claude/
+        force: If True, overwrite existing items
+        skip: If True, skip deployment entirely
 
     Returns:
-        List of paths to deployed command files/directories
+        List of paths to deployed files/directories
     """
-    if skip_commands:
+    if skip:
         return []
 
-    templates_commands_dir = _find_templates_dir("commands")
-    if templates_commands_dir is None:
+    templates_dir = _find_templates_dir(template_subdir)
+    if templates_dir is None:
         logger.warning(
-            "Commands templates directory not found. "
+            f"{template_subdir.capitalize()} templates directory not found. "
             "This may indicate an installation issue if running from a package."
         )
         return []
 
-    # Create .claude/commands directory
-    commands_dir = project_root / ".claude" / "commands"
-    commands_dir.mkdir(parents=True, exist_ok=True)
+    # Create .claude/{dest_subdir} directory
+    dest_dir = project_root / ".claude" / dest_subdir
+    dest_dir.mkdir(parents=True, exist_ok=True)
 
     deployed = []
 
-    # Copy each item from templates/commands/ to .claude/commands/
-    for item in templates_commands_dir.iterdir():
+    # Copy each item from templates/{template_subdir}/ to .claude/{dest_subdir}/
+    for item in templates_dir.iterdir():
         # Skip symlinks
         if item.is_symlink():
             continue
 
         # Destination path
-        dest_item = commands_dir / item.name
+        dest_item = dest_dir / item.name
 
         # Check if item already exists
         if dest_item.exists() and not force:
@@ -439,7 +447,7 @@ def deploy_commands(
                     dest_item.unlink()
             except OSError as exc:
                 raise RuntimeError(
-                    f"Failed to remove existing command '{dest_item}'. "
+                    f"Failed to remove existing {template_subdir[:-1]} '{dest_item}'. "
                     "Please check file permissions and whether any files are in use."
                 ) from exc
 
@@ -450,13 +458,38 @@ def deploy_commands(
                 shutil.copy2(item, dest_item)
         except OSError as exc:
             raise RuntimeError(
-                f"Failed to copy command '{item}' to '{dest_item}'. "
+                f"Failed to copy {template_subdir[:-1]} '{item}' to '{dest_item}'. "
                 "Please check file permissions, available disk space, and whether any "
                 "files are in use."
             ) from exc
         deployed.append(dest_item)
 
     return deployed
+
+
+def deploy_commands(
+    project_root: Path,
+    *,
+    force: bool = False,
+    skip_commands: bool = False,
+) -> list[Path]:
+    """Deploy commands from templates/commands/ to .claude/commands/.
+
+    Args:
+        project_root: Root directory of the project
+        force: If True, overwrite existing commands
+        skip_commands: If True, skip command deployment entirely
+
+    Returns:
+        List of paths to deployed command files/directories
+    """
+    return _deploy_template_directory(
+        project_root,
+        "commands",
+        "commands",
+        force=force,
+        skip=skip_commands,
+    )
 
 
 def deploy_partials(
@@ -475,65 +508,13 @@ def deploy_partials(
     Returns:
         List of paths to deployed partial files/directories
     """
-    if skip_partials:
-        return []
-
-    templates_partials_dir = _find_templates_dir("partials")
-    if templates_partials_dir is None:
-        logger.warning(
-            "Partials templates directory not found. "
-            "This may indicate an installation issue if running from a package."
-        )
-        return []
-
-    # Create .claude/partials directory
-    partials_dir = project_root / ".claude" / "partials"
-    partials_dir.mkdir(parents=True, exist_ok=True)
-
-    deployed = []
-
-    # Copy each item from templates/partials/ to .claude/partials/
-    for item in templates_partials_dir.iterdir():
-        # Skip symlinks
-        if item.is_symlink():
-            continue
-
-        # Destination path
-        dest_item = partials_dir / item.name
-
-        # Check if item already exists
-        if dest_item.exists() and not force:
-            # Skip existing items unless --force
-            continue
-
-        # Copy item
-        if dest_item.exists():
-            # Remove existing if force=True
-            try:
-                if dest_item.is_dir():
-                    shutil.rmtree(dest_item)
-                else:
-                    dest_item.unlink()
-            except OSError as exc:
-                raise RuntimeError(
-                    f"Failed to remove existing partial '{dest_item}'. "
-                    "Please check file permissions and whether any files are in use."
-                ) from exc
-
-        try:
-            if item.is_dir():
-                shutil.copytree(item, dest_item)
-            else:
-                shutil.copy2(item, dest_item)
-        except OSError as exc:
-            raise RuntimeError(
-                f"Failed to copy partial '{item}' to '{dest_item}'. "
-                "Please check file permissions, available disk space, and whether any "
-                "files are in use."
-            ) from exc
-        deployed.append(dest_item)
-
-    return deployed
+    return _deploy_template_directory(
+        project_root,
+        "partials",
+        "partials",
+        force=force,
+        skip=skip_partials,
+    )
 
 
 __all__ = [
