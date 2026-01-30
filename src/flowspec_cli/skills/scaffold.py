@@ -60,26 +60,29 @@ class SkillSyncResult:
         return ", ".join(parts) if parts else "no skills found"
 
 
-def _find_templates_skills_dir() -> Path | None:
-    """Locate the templates/skills directory.
+def _find_templates_dir(subdir: str) -> Path | None:
+    """Locate a templates subdirectory.
 
     Templates are bundled with the flowspec_cli package at
-    flowspec_cli/templates/skills/. Falls back to source repo
+    flowspec_cli/templates/{subdir}/. Falls back to source repo
     structure for development mode.
 
+    Args:
+        subdir: Name of the subdirectory under templates/ (e.g., "skills", "commands", "partials")
+
     Returns:
-        Path to templates/skills directory, or None if not found.
+        Path to templates/{subdir} directory, or None if not found.
     """
     # First, check for bundled templates in the package
     # This is the primary location for standalone flowspec
-    package_templates = Path(__file__).parent.parent / "templates" / "skills"
+    package_templates = Path(__file__).parent.parent / "templates" / subdir
     if package_templates.exists():
         return package_templates
 
     # Fallback: Look for templates in source repo structure
     # This handles development mode where templates are at repo root.
     src_dir = Path(__file__).parent.parent.parent.parent  # Go up to repo root
-    potential_templates = src_dir / "templates" / "skills"
+    potential_templates = src_dir / "templates" / subdir
     if potential_templates.exists():
         return potential_templates
 
@@ -105,7 +108,7 @@ def deploy_skills(
     if skip_skills:
         return []
 
-    templates_skills_dir = _find_templates_skills_dir()
+    templates_skills_dir = _find_templates_dir("skills")
     if templates_skills_dir is None:
         logger.warning(
             "Skills templates directory not found. "
@@ -353,8 +356,145 @@ def compare_skills_after_extraction(
     return result
 
 
+def _deploy_template_directory(
+    project_root: Path,
+    template_subdir: str,
+    dest_subdir: str,
+    *,
+    force: bool = False,
+    skip: bool = False,
+) -> list[Path]:
+    """Deploy a template directory to .claude/{dest_subdir}/.
+
+    This is a shared helper function used by deploy_commands and deploy_partials
+    to reduce code duplication. Both functions follow the same pattern of copying
+    template files/directories to .claude/{dest_subdir}/.
+
+    Args:
+        project_root: Root directory of the project
+        template_subdir: Name of the template subdirectory (e.g., "commands", "partials")
+        dest_subdir: Name of the destination subdirectory under .claude/
+        force: If True, overwrite existing items
+        skip: If True, skip deployment entirely
+
+    Returns:
+        List of paths to deployed files/directories
+    """
+    if skip:
+        return []
+
+    templates_dir = _find_templates_dir(template_subdir)
+    if templates_dir is None:
+        logger.warning(
+            f"{template_subdir.capitalize()} templates directory not found. "
+            "This may indicate an installation issue if running from a package."
+        )
+        return []
+
+    # Create .claude/{dest_subdir} directory
+    dest_dir = project_root / ".claude" / dest_subdir
+    dest_dir.mkdir(parents=True, exist_ok=True)
+
+    deployed = []
+
+    # Copy each item from templates/{template_subdir}/ to .claude/{dest_subdir}/
+    for item in templates_dir.iterdir():
+        # Skip symlinks
+        if item.is_symlink():
+            continue
+
+        # Destination path
+        dest_item = dest_dir / item.name
+
+        # Check if item already exists
+        if dest_item.exists() and not force:
+            # Skip existing items unless --force
+            continue
+
+        # Copy item
+        if dest_item.exists():
+            # Remove existing if force=True
+            try:
+                if dest_item.is_dir():
+                    shutil.rmtree(dest_item)
+                else:
+                    dest_item.unlink()
+            except OSError as exc:
+                raise RuntimeError(
+                    f"Failed to remove existing item '{dest_item}'. "
+                    "Please check file permissions and whether any files are in use."
+                ) from exc
+
+        try:
+            if item.is_dir():
+                shutil.copytree(item, dest_item)
+            else:
+                shutil.copy2(item, dest_item)
+        except OSError as exc:
+            raise RuntimeError(
+                f"Failed to copy '{item}' to '{dest_item}'. "
+                "Please check file permissions, available disk space, and whether any "
+                "files are in use."
+            ) from exc
+        deployed.append(dest_item)
+
+    return deployed
+
+
+def deploy_commands(
+    project_root: Path,
+    *,
+    force: bool = False,
+    skip_commands: bool = False,
+) -> list[Path]:
+    """Deploy commands from templates/commands/ to .claude/commands/.
+
+    Args:
+        project_root: Root directory of the project
+        force: If True, overwrite existing commands
+        skip_commands: If True, skip command deployment entirely
+
+    Returns:
+        List of paths to deployed command files/directories
+    """
+    return _deploy_template_directory(
+        project_root,
+        "commands",
+        "commands",
+        force=force,
+        skip=skip_commands,
+    )
+
+
+def deploy_partials(
+    project_root: Path,
+    *,
+    force: bool = False,
+    skip_partials: bool = False,
+) -> list[Path]:
+    """Deploy partials from templates/partials/ to .claude/partials/.
+
+    Args:
+        project_root: Root directory of the project
+        force: If True, overwrite existing partials
+        skip_partials: If True, skip partials deployment entirely
+
+    Returns:
+        List of paths to deployed partial files/directories
+    """
+    return _deploy_template_directory(
+        project_root,
+        "partials",
+        "partials",
+        force=force,
+        skip=skip_partials,
+    )
+
+
 __all__ = [
     "deploy_skills",
+    "deploy_commands",
+    "deploy_partials",
     "sync_skills_directory",
     "compare_skills_after_extraction",
     "SkillSyncResult",
