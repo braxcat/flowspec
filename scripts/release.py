@@ -250,12 +250,28 @@ def offer_stash_changes() -> bool:
     if response == "s":
         print("\n  Stashing changes...")
         result = run(
-            ["git", "stash", "push", "-m", "release.py: auto-stash before release"],
+            [
+                "git",
+                "stash",
+                "push",
+                "-u",
+                "-m",
+                "release.py: auto-stash before release",
+            ],
             check=False,
             capture=True,
         )
         if result.returncode != 0:
             print(f"  ❌ Failed to stash changes: {result.stderr}")
+            return False
+
+        # Verify that the working directory is now clean.
+        remaining_changes = get_uncommitted_changes()
+        if remaining_changes:
+            print("  ❌ Failed to stash all changes; working directory is still dirty:")
+            for line in remaining_changes:
+                print(f"    {line}")
+            print("  Please clean or stash these changes manually and retry.")
             return False
         print("  ✓ Changes stashed. Run 'git stash pop' after release to restore.")
         return True
