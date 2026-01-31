@@ -208,50 +208,130 @@ def update_version_files(new_version: str, dry_run: bool = False) -> None:
             print(f"  {filepath}: updated to {new_version}")
 
 
+def get_uncommitted_changes() -> list[str]:
+    """Get list of uncommitted changes (staged and unstaged)."""
+    result = run(["git", "status", "--porcelain"], capture=True, check=False)
+    if result.returncode != 0:
+        print("Error: failed to get git status")
+        if result.stderr:
+            print(result.stderr.strip())
+        sys.exit(1)
+    if not result.stdout.strip():
+        return []
+    return result.stdout.strip().split("\n")
+
+
 def check_git_clean() -> bool:
     """Check if working directory is clean."""
-    result = run(["git", "status", "--porcelain"], capture=True)
-    if result.returncode != 0:
-        return False
-
-    if result.stdout.strip():
+    changes = get_uncommitted_changes()
+    if changes:
         print("  Warning: Working directory has uncommitted changes")
-        for line in result.stdout.strip().split("\n"):
+        for line in changes:
             print(f"    {line}")
         return False
     return True
 
 
-def cleanup_internal_dev_logs(dry_run: bool = False) -> list[Path]:
+def offer_stash_changes() -> bool:
+    """Offer to stash uncommitted changes. Returns True if stash succeeded or no changes."""
+    changes = get_uncommitted_changes()
+    if not changes:
+        return True
+
+    print("\n⚠️  Working directory has uncommitted changes:")
+    for line in changes:
+        print(f"    {line}")
+
+    print("\n  Options:")
+    print("    [s] Stash changes and continue")
+    print("    [a] Abort release")
+    response = input("  Choice [s/a]: ").strip().lower()
+
+    if response == "s":
+        print("\n  Stashing changes...")
+        result = run(
+            [
+                "git",
+                "stash",
+                "push",
+                "-u",
+                "-m",
+                "release.py: auto-stash before release",
+            ],
+            check=False,
+            capture=True,
+        )
+        if result.returncode != 0:
+            print(f"  ❌ Failed to stash changes: {result.stderr}")
+            return False
+
+        # Verify that the working directory is now clean.
+        remaining_changes = get_uncommitted_changes()
+        if remaining_changes:
+            print("  ❌ Failed to stash all changes; working directory is still dirty:")
+            for line in remaining_changes:
+                print(f"    {line}")
+            print("  Please clean or stash these changes manually and retry.")
+            return False
+        print("  ✓ Changes stashed. Run 'git stash pop' after release to restore.")
+        return True
+    else:
+        return False
+
+
+def is_tracked_by_git(file_path: Path) -> bool:
+    """Check if a file is tracked by git (exists in index or HEAD)."""
+    result = run(
+        ["git", "ls-files", "--error-unmatch", str(file_path)],
+        check=False,
+        capture=True,
+    )
+    return result.returncode == 0
+
+
+def cleanup_internal_dev_logs(dry_run: bool = False) -> tuple[list[Path], list[Path]]:
     """Remove internal development logs before release.
 
     Internal dev logs are stored in .flowspec/logs/ and should not be
     included in releases as they contain developer-specific information.
 
     Returns:
-        List of deleted files.
+        Tuple of (tracked_deleted, untracked_deleted) file lists.
+        Only tracked_deleted files need to be staged for commit.
     """
     internal_logs_dir = Path(".flowspec/logs")
-    deleted_files: list[Path] = []
+    tracked_deleted: list[Path] = []
+    untracked_deleted: list[Path] = []
 
     if not internal_logs_dir.exists():
         print("  No internal logs directory found")
-        return deleted_files
+        return tracked_deleted, untracked_deleted
 
     # Find all log files (but preserve .gitkeep files)
     for log_file in internal_logs_dir.rglob("*"):
         if log_file.is_file() and log_file.name != ".gitkeep":
+            tracked = is_tracked_by_git(log_file)
             if dry_run:
-                print(f"  Would delete: {log_file}")
+                status = "(tracked)" if tracked else "(untracked)"
+                print(f"  Would delete: {log_file} {status}")
             else:
                 log_file.unlink()
-                print(f"  Deleted: {log_file}")
-            deleted_files.append(log_file)
+                status = (
+                    "(tracked - will stage)"
+                    if tracked
+                    else "(untracked - no staging needed)"
+                )
+                print(f"  Deleted: {log_file} {status}")
 
-    if not deleted_files:
+            if tracked:
+                tracked_deleted.append(log_file)
+            else:
+                untracked_deleted.append(log_file)
+
+    if not tracked_deleted and not untracked_deleted:
         print("  No internal logs to clean up")
 
-    return deleted_files
+    return tracked_deleted, untracked_deleted
 
 
 def get_current_branch() -> str:
@@ -358,10 +438,13 @@ Workflow:
             sys.exit(1)
 
     if not args.force and not check_git_clean():
-        print("\n Working directory has uncommitted changes.")
-        print("  Commit or stash them first, or use --force to override.")
-        sys.exit(1)
-    print("  Working directory is clean")
+        if not offer_stash_changes():
+            print(
+                "\n❌ Aborted. Commit or stash changes first, or use --force to override."
+            )
+            sys.exit(1)
+    else:
+        print("  Working directory is clean")
 
     if not args.dry_run and not check_gh_cli():
         sys.exit(1)
@@ -483,25 +566,30 @@ Workflow:
     # Clean up internal development logs
     print("\n Cleaning up internal development logs:")
     try:
-        deleted_logs = cleanup_internal_dev_logs()
+        tracked_deleted, untracked_deleted = cleanup_internal_dev_logs()
     except Exception as e:
         print("  ❌ Failed to clean up internal development logs:")
         print(f"     {e}")
         safe_rollback(release_branch, current_branch)
         sys.exit(1)
 
+    if untracked_deleted:
+        print(
+            f"  ℹ️  {len(untracked_deleted)} untracked log file(s) deleted (no staging needed)"
+        )
+
     # Git operations
     print("\n Creating commit:")
-    files_to_stage = [
-        "pyproject.toml",
-        "src/flowspec_cli/__init__.py",
-    ]
 
-    # Stage deleted log files if any were removed
-    if deleted_logs:
-        files_to_stage.extend(str(f) for f in deleted_logs)
+    # Stage version file updates
+    run(["git", "add", "pyproject.toml", "src/flowspec_cli/__init__.py"])
 
-    run(["git", "add"] + files_to_stage)
+    # Stage tracked deleted files (untracked deletions don't need staging)
+    if tracked_deleted:
+        print(f"  Staging {len(tracked_deleted)} tracked log file deletion(s)...")
+        # Use git add -u to stage all deletions in the logs directory
+        # This is more robust than staging individual files
+        run(["git", "add", "-u", ".flowspec/logs/"])
     run(["git", "commit", "-m", f"chore: release v{new_version}"])
 
     # Push branch
