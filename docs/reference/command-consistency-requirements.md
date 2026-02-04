@@ -12,7 +12,7 @@ All `/flow:*` commands MUST consistently implement three core behaviors:
 2. **Integrate with backlog** for task tracking
 3. **Log decisions** for auditability
 
-Currently, only 9 of 23 commands fully implement all three requirements.
+Currently, only 5 of 23 commands fully implement all three requirements.
 
 ## Required Behaviors
 
@@ -82,6 +82,8 @@ Every command that makes decisions MUST log to `.flowspec/logs/decisions/`:
 
 ## Current Compliance Audit
 
+> **Note:** Line counts are from `.claude/commands/flow/*.md` files.
+
 ### Fully Compliant (3 requirements met)
 
 | Command | Artifacts | Backlog | Decisions | Lines |
@@ -147,7 +149,7 @@ Every command that makes decisions MUST log to `.flowspec/logs/decisions/`:
 
 ## Command Simplification Target
 
-Per summary-feb3.md analysis, commands should be **<200 lines each**.
+Commands should be **<200 lines each** for maintainability.
 
 | Command | Current | Target | Reduction |
 |---------|---------|--------|-----------|
@@ -203,5 +205,5 @@ loop: inner|outer|both
 
 ## References
 
-- [summary-feb3.md](../summary-feb3.md) - Simplification analysis
 - [everything-claude-code](https://github.com/affaan-m/everything-claude-code) - Reference implementation
+- Command locations: `.claude/commands/flow/*.md`
