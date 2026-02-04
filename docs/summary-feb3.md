@@ -3,24 +3,30 @@
 ## Open GitHub Issues Validation
 
 ### Issue #1186 - [Bug] Flowspec init doesn't produce commands
-**Status:** NEEDS INVESTIGATION - WINDOWS-SPECIFIC
+**Status:** ✅ FIXED - PR #1201
 
 **Problem:** Reporter claims `flowspec init my-project --ai claude` does not generate commands.
 
-**Validation on macOS (Feb 3):**
-- ✅ `.claude/commands/` - **15 files created correctly**
-- ✅ `.github/agents/` - **6 files created correctly**
-- ❌ `.github/prompts/` - **Does not exist in templates** (reporter expected this but flowspec uses `.github/agents/` for Copilot)
+**Root Cause Identified (Feb 4):**
+The issue was **NOT** about commands deployment - that works correctly. The actual bug was a **Windows Unicode encoding crash** in the banner display:
 
-**Conclusion:** Works correctly on macOS. Issue is likely:
-1. **Windows-specific path/permission issue** during template extraction
-2. **User error** - wrong version, network issue, or misunderstanding `.github/agents/` vs `.github/prompts/`
-3. **Flowspec version 0.4.004** (reporter) vs 0.4.007 (tested) - may have been fixed
+- Windows terminals using legacy `cp1252` encoding cannot display Unicode box-drawing characters (█, ╔, ═, etc.)
+- When `flowspec init` tried to display the banner via Rich, it crashed with `UnicodeEncodeError`
+- The crash happened **before** template deployment, making it appear commands weren't created
+- On macOS/Linux with UTF-8, the banner displays correctly so the issue wasn't reproducible
 
-**Recommended Actions:**
-1. Ask reporter to verify with latest version (0.4.007)
-2. If still failing, debug Windows path handling in `src/flowspec_cli/commands/init.py`
-3. Clarify in docs that Copilot uses `.github/agents/` not `.github/prompts/`
+**Fix Applied (PR #1201):**
+1. Added `BANNER_ASCII` constant - figlet-style ASCII fallback banner
+2. Added `_can_encode_unicode()` helper - detects encoding support upfront
+3. Modified `show_banner()` to select appropriate banner based on encoding
+4. Handles edge cases: stdout None, encoding None/empty, TypeError for non-string encoding
+5. Added 15 comprehensive tests in `tests/test_banner_encoding.py`
+
+**Validation:**
+- ✅ Commands deployment verified working via direct Python test
+- ✅ ASCII banner displays correctly on Windows cp1252
+- ✅ All 15 CI checks pass
+- ✅ Copilot review approved
 
 ---
 
@@ -159,10 +165,10 @@
 ## Priority Task List
 
 ### P0 - Critical (Bug Fix)
-1. **Investigate #1186**: Works on macOS, may be Windows-specific
-   - Ask reporter to retest with v0.4.007
-   - If still failing: debug Windows path handling
-   - Clarify docs: Copilot uses `.github/agents/` not `.github/prompts/`
+1. ~~**Investigate #1186**: Works on macOS, may be Windows-specific~~ ✅ **FIXED (PR #1201)**
+   - Root cause: Windows Unicode encoding crash in banner display (cp1252 can't encode █, ╔, ═)
+   - Fix: ASCII fallback banner with encoding detection
+   - 15 comprehensive tests added
 
 ### P1 - High Priority (Simplification)
 2. **Slim command files** to <200 lines each
@@ -204,7 +210,7 @@
 | Security commands in core | 5 | **0** (moved to ps/dev-guard) |
 | Skills (SDD-focused) | 10 | 8-10 |
 | Windows-compatible hooks | ~0% | 100% |
-| Init produces commands | NO | YES |
+| Init produces commands | ✅ YES (PR #1201) | YES |
 
 ---
 
