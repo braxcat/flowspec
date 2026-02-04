@@ -3447,7 +3447,7 @@ def _can_encode_unicode() -> bool:
         return False
 
 
-def show_banner():
+def show_banner() -> None:
     """Display the banner with Unicode or ASCII fallback.
 
     Uses Unicode box-drawing characters by default. Falls back to ASCII
