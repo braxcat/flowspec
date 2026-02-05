@@ -398,10 +398,12 @@ class TestWorkflowTransitions:
     """Tests for standard WORKFLOW_TRANSITIONS."""
 
     def test_all_transitions_defined(self):
-        """AC2: All 6+ workflow transitions are defined."""
-        # Should have: assess, specify, plan, implement, validate, submit_pr, complete
-        # NOTE: research and operate removed - workflow simplification
-        assert len(WORKFLOW_TRANSITIONS) >= 6
+        """AC2: All workflow transitions are defined."""
+        # TransitionSchema in transition.py has 7 transitions:
+        # assess, specify, plan, implement, validate, operate, complete
+        # NOTE: research removed, operate/complete retained for schema completeness
+        # The simplified workflow (5 transitions) is in __init__.py WORKFLOW_TRANSITIONS dict
+        assert len(WORKFLOW_TRANSITIONS) == 7
         names = [t.name for t in WORKFLOW_TRANSITIONS]
         assert "assess" in names
         assert "specify" in names
