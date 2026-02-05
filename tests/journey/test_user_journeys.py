@@ -276,11 +276,12 @@ class TestCustomerJourney:
         JOURNEY: User wants to pass context to workflow
 
         Steps:
-        1. User runs: flowspec flow custom full_design --context complexity=8
+        1. User runs: flowspec flow custom full_design --context feature=auth
         2. System evaluates conditions with context
-        3. Research step runs because complexity >= 7
+        3. Steps execute with context available
 
         Success: Context-aware execution working
+        NOTE: Research step removed in workflow simplification
         """
         result = subprocess.run(
             [
@@ -291,7 +292,7 @@ class TestCustomerJourney:
                 "custom",
                 "full_design",
                 "--context",
-                "complexity=8",
+                "feature=auth",
             ],
             capture_output=True,
             text=True,
@@ -300,14 +301,10 @@ class TestCustomerJourney:
 
         assert result.returncode == 0, f"Command failed: {result.stderr}"
 
-        # With complexity=8, research should be included
-        # (Not skipped)
-        assert "research" in result.stdout.lower(), "research step not shown"
-        # Should NOT see skip message for research
-        assert (
-            "skipped" not in result.stdout.lower()
-            or "research" not in result.stdout.lower()
-        ), "research was skipped incorrectly"
+        # Should show all workflow steps
+        assert "assess" in result.stdout.lower(), "assess step not shown"
+        assert "specify" in result.stdout.lower(), "specify step not shown"
+        assert "plan" in result.stdout.lower(), "plan step not shown"
 
 
 class TestEdgeCases:

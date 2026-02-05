@@ -54,6 +54,26 @@ def detect_pr_intent(conversation_summary: str) -> bool:
     return False
 
 
+def find_project_root() -> Path:
+    """
+    Find project root by searching upward for .git directory.
+
+    Returns:
+        Project root path, or current working directory as fallback
+    """
+    current = Path(__file__).resolve().parent
+    for _ in range(10):  # Limit search depth
+        if (current / ".git").exists():
+            return current
+        if (current / "backlog").exists():
+            return current
+        if current.parent == current:
+            break
+        current = current.parent
+    # Fallback to current working directory
+    return Path.cwd()
+
+
 def check_in_progress_tasks() -> list[dict]:
     """
     Check for In Progress tasks via backlog CLI.
@@ -63,13 +83,16 @@ def check_in_progress_tasks() -> list[dict]:
         Empty list if no tasks or on error (fail-open)
     """
     try:
+        # Find project root reliably
+        project_root = find_project_root()
+
         # Run backlog CLI with 5 second timeout
         result = subprocess.run(
             ["backlog", "task", "list", "--plain", "-s", "In Progress"],
             capture_output=True,
             text=True,
             timeout=5,
-            cwd=Path(__file__).parent.parent.parent,
+            cwd=project_root,
         )
 
         if result.returncode != 0:

@@ -589,27 +589,30 @@ def deploy_claude_hooks(
                 project_name = project_root.name
 
             # Detect tech stack for preferences
-            code_style = "ruff"  # Default to ruff for Python
-            test_framework = "pytest"  # Default
-            package_manager = "uv"  # Default
+            # Priority: Python > Node.js (flowspec is Python-first)
+            has_python = (project_root / "pyproject.toml").exists()
+            has_nodejs = (project_root / "package.json").exists()
 
-            # Check for package.json (Node.js project)
-            if (project_root / "package.json").exists():
-                code_style = "prettier"
-                test_framework = "jest"
-                package_manager = "npm"
-
-            # Check for pyproject.toml (Python project)
-            if (project_root / "pyproject.toml").exists():
+            if has_python:
+                # Python project (or hybrid - Python takes precedence)
                 code_style = "ruff"
                 test_framework = "pytest"
-                # Check for uv.lock vs requirements.txt
                 if (project_root / "uv.lock").exists():
                     package_manager = "uv"
                 elif (project_root / "poetry.lock").exists():
                     package_manager = "poetry"
                 else:
                     package_manager = "pip"
+            elif has_nodejs:
+                # Pure Node.js project
+                code_style = "prettier"
+                test_framework = "jest"
+                package_manager = "npm"
+            else:
+                # Default to Python tooling
+                code_style = "ruff"
+                test_framework = "pytest"
+                package_manager = "uv"
 
             # Replace placeholders
             content = template_content.replace("{{PROJECT_NAME}}", project_name)

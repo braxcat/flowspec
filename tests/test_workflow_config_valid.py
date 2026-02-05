@@ -190,7 +190,9 @@ class TestAgentAssignments:
         assert "product-requirements-manager" in agent_names
 
     # NOTE: test_research_has_correct_agents REMOVED
-    # /flow:research was removed - workflow simplification
+    # /flow:research workflow was removed - workflow simplification
+    # Agent definitions (.agents/researcher.md, .agents/business-validator.md)
+    # are retained for potential future use or manual agent invocation.
     # See: build-docs/simplify/flowspec-loop.md
 
     def test_plan_has_correct_agents(self, workflow_config: dict[str, Any]) -> None:
